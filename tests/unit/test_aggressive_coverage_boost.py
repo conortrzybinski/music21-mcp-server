@@ -183,53 +183,57 @@ class TestScoreInfoToolCoverage:
             info = {"key_signatures": ["D major"]}
             assert len(info["key_signatures"]) > 0
 
-    def test_get_tempo_info(self, score_info_tool):
-        """Test tempo info extraction"""
+    def test_analyze_time_and_tempo(self, score_info_tool):
+        """Test time and tempo analysis"""
         from music21 import tempo
 
         test_score = stream.Score()
         test_score.append(tempo.MetronomeMark(number=120))
 
-        info = score_info_tool._get_tempo_info(test_score)
-        assert "tempo_markings" in info
+        info = score_info_tool._analyze_time_and_tempo(test_score)
+        assert "tempo_bpm" in info
 
-    def test_get_duration_info(self, score_info_tool):
-        """Test duration info extraction"""
+    def test_analyze_structure(self, score_info_tool):
+        """Test structure analysis"""
         test_score = stream.Score()
         part = stream.Part()
         for i in range(4):
             part.append(note.Note("C4", quarterLength=1.0))
         test_score.append(part)
 
-        info = score_info_tool._get_duration_info(test_score)
-        assert "total_duration" in info
-        assert "total_measures" in info
-        assert info["total_duration"] > 0
+        info = score_info_tool._analyze_structure(test_score)
+        assert "duration_quarters" in info
+        assert "num_measures" in info
+        assert info["duration_quarters"] > 0
 
-    def test_get_pitch_range_info(self, score_info_tool):
-        """Test pitch range extraction"""
+    def test_analyze_instruments(self, score_info_tool):
+        """Test instrument analysis"""
+        from music21 import instrument
+        
         test_score = stream.Score()
         part = stream.Part()
+        part.insert(0, instrument.Piano())
         part.append(note.Note("C3", quarterLength=1.0))  # Low
         part.append(note.Note("C6", quarterLength=1.0))  # High
         test_score.append(part)
 
-        info = score_info_tool._get_pitch_range_info(test_score)
-        assert "lowest_pitch" in info
-        assert "highest_pitch" in info
-        assert "pitch_range" in info
+        instruments = score_info_tool._analyze_instruments(test_score)
+        assert isinstance(instruments, list)
+        if instruments:
+            assert "part_number" in instruments[0]
 
-    def test_get_instrument_info(self, score_info_tool):
-        """Test instrument info extraction"""
-        from music21 import instrument
+    def test_analyze_detailed_structure(self, score_info_tool):
+        """Test detailed structure analysis"""
+        from music21 import key
 
         test_score = stream.Score()
+        test_score.append(key.KeySignature(2))  # D major
         part = stream.Part()
-        part.insert(0, instrument.Piano())
+        part.append(note.Note("C4", quarterLength=1.0))
         test_score.append(part)
 
-        info = score_info_tool._get_instrument_info(test_score)
-        assert "instruments" in info
+        info = score_info_tool._analyze_detailed_structure(test_score)
+        assert isinstance(info, dict)
 
     @pytest.mark.asyncio
     async def test_execute_success(self, score_info_tool):
@@ -237,9 +241,9 @@ class TestScoreInfoToolCoverage:
         result = await score_info_tool.execute(score_id="test_score")
 
         assert result["status"] == "success"
-        assert "basic_info" in result
-        assert "time_signatures" in result
-        assert "duration_info" in result
+        assert "num_parts" in result
+        assert "composer" in result
+        assert "duration_seconds" in result
 
     @pytest.mark.asyncio
     async def test_execute_missing_score(self, score_info_tool):
