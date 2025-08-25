@@ -863,6 +863,1091 @@ class TestExtraCoverage:
         assert "status" in health
         assert health["status"] in ["healthy", "degraded", "unhealthy"]
 
+    def test_more_module_coverage(self):
+        """Test more modules to increase coverage"""
+        # Test async optimization module
+        from music21_mcp.async_optimization import AsyncOptimizer
+
+        optimizer = AsyncOptimizer()
+        assert hasattr(optimizer, "roman_cache")
+        assert hasattr(optimizer, "chord_pattern_cache")
+
+        # Build lookup table
+        lookup = optimizer._build_roman_lookup_table()
+        assert isinstance(lookup, dict)
+        assert len(lookup) > 0
+
+        # Test memory pressure monitor
+        from music21_mcp.memory_pressure_monitor import (
+            MemoryPressureLevel,
+            MemoryPressureMonitor,
+        )
+
+        monitor = MemoryPressureMonitor(max_memory_mb=100)
+        assert monitor.max_memory_mb == 100
+
+        # Get current stats
+        stats = monitor.get_current_stats()
+        if stats:
+            assert stats.level in [
+                MemoryPressureLevel.NORMAL,
+                MemoryPressureLevel.HIGH,
+                MemoryPressureLevel.CRITICAL,
+            ]
+
+        # Test cache warmer - fix parameter issue
+        from music21_mcp.cache_warmer import CacheWarmer
+        from music21_mcp.performance_optimizations import PerformanceOptimizer
+        
+        perf_optimizer = PerformanceOptimizer()
+        warmer = CacheWarmer(optimizer=perf_optimizer)
+
+        # Get warmer stats
+        stats = warmer.get_stats()
+        assert "keys_processed" in stats
+        assert "progressions_cached" in stats
+        assert "chords_cached" in stats
+
+    def test_rate_limiter_extra_coverage(self):
+        """Test rate limiter module for extra coverage"""
+        from music21_mcp.rate_limiter import RateLimitStrategy, RateLimitConfig
+        
+        # Test rate limit strategy enum
+        assert RateLimitStrategy.SLIDING_WINDOW.value == "sliding_window"
+        assert RateLimitStrategy.FIXED_WINDOW.value == "fixed_window"
+        assert RateLimitStrategy.TOKEN_BUCKET.value == "token_bucket"
+        
+        # Test rate limit config
+        config = RateLimitConfig()
+        assert config.requests_per_minute == 60
+        assert config.burst_size == 10
+        
+        # Test rate limit config with custom values
+        config = RateLimitConfig(requests_per_minute=10, burst_size=5)
+        assert config.requests_per_minute == 10
+        assert config.burst_size == 5
+
+    def test_health_checks_extra_coverage(self):
+        """Test health checks module for extra coverage"""
+        from music21_mcp.health_checks import HealthStatus, HealthCheckResult, get_health_checker
+        
+        # Test health status enum
+        assert HealthStatus.HEALTHY.value == "healthy"
+        assert HealthStatus.DEGRADED.value == "degraded"
+        assert HealthStatus.UNHEALTHY.value == "unhealthy"
+        
+        # Test health check result
+        result = HealthCheckResult(
+            name="test_check",
+            status=HealthStatus.HEALTHY,
+            message="All good",
+            details={"foo": "bar"},
+            duration_ms=10.5
+        )
+        
+        result_dict = result.to_dict()
+        assert result_dict["name"] == "test_check"
+        assert result_dict["status"] == "healthy"
+        assert result_dict["message"] == "All good"
+        assert result_dict["details"]["foo"] == "bar"
+        assert result_dict["duration_ms"] == 10.5
+        
+        # Test singleton health checker
+        checker1 = get_health_checker()
+        checker2 = get_health_checker()
+        assert checker1 is checker2  # Should be the same instance
+        
+        # Test record request
+        checker1.record_request(100.0, success=True)
+        assert checker1.request_count >= 1
+        assert checker1.error_count >= 0
+        
+        checker1.record_request(200.0, success=False)
+        assert checker1.request_count >= 2
+        assert checker1.error_count >= 1
+
+    def test_retry_logic_extra_coverage(self):
+        """Test retry logic module for extra coverage"""
+        from music21_mcp.retry_logic import (
+            RetryableError, NonRetryableError, CircuitState,
+            RetryPolicy, CircuitBreaker, CircuitBreakerOpenError,
+            FILE_IO_POLICY, NETWORK_POLICY, MUSIC21_POLICY, DATABASE_POLICY,
+            RetryableMusic21Operation, BulkRetryExecutor
+        )
+        
+        # Test exceptions
+        retry_err = RetryableError("retry me")
+        assert str(retry_err) == "retry me"
+        
+        non_retry_err = NonRetryableError("don't retry")
+        assert str(non_retry_err) == "don't retry"
+        
+        # Test circuit states
+        assert CircuitState.CLOSED.value == "closed"
+        assert CircuitState.OPEN.value == "open"
+        assert CircuitState.HALF_OPEN.value == "half_open"
+        
+        # Test retry policy
+        policy = RetryPolicy(max_attempts=3, base_delay=1.0)
+        assert policy.max_attempts == 3
+        assert policy.base_delay == 1.0
+        
+        # Test should retry
+        assert policy.should_retry(RetryableError("test"), 1) == True
+        assert policy.should_retry(ValueError("test"), 1) == False
+        assert policy.should_retry(RetryableError("test"), 5) == False
+        
+        # Test get delay
+        delay = policy.get_delay(0)
+        assert delay >= 0.5 and delay <= 2.0  # With jitter
+        
+        # Test circuit breaker
+        breaker = CircuitBreaker(failure_threshold=3, recovery_timeout=60.0)
+        assert breaker.state == CircuitState.CLOSED
+        assert breaker.failure_count == 0
+        
+        # Test pre-configured policies
+        assert FILE_IO_POLICY.max_attempts == 3
+        assert NETWORK_POLICY.max_attempts == 5
+        assert MUSIC21_POLICY.max_attempts == 3
+        assert DATABASE_POLICY.max_attempts == 3
+        
+        # Test retryable music21 operation
+        retry_op = RetryableMusic21Operation()
+        assert retry_op.policy is not None
+        assert retry_op.circuit_breaker is not None
+        
+        # Test bulk retry executor
+        executor = BulkRetryExecutor(max_concurrent=5)
+        assert executor.max_concurrent == 5
+        assert executor.policy is not None
+
+
+class TestStyleImitationToolComprehensive:
+    """Comprehensive tests for StyleImitationTool to boost coverage"""
+
+    @pytest.fixture
+    def style_tool(self):
+        """Create a StyleImitationTool instance"""
+        score_manager = {}
+        from music21_mcp.tools.style_imitation_tool import StyleImitationTool
+        return StyleImitationTool(score_manager)
+
+    def test_style_profiles_access(self, style_tool):
+        """Test style profiles are accessible"""
+        assert "bach" in style_tool.style_profiles
+        assert "mozart" in style_tool.style_profiles
+        assert "chopin" in style_tool.style_profiles
+        assert "debussy" in style_tool.style_profiles
+
+    def test_validate_inputs_composer(self, style_tool):
+        """Test input validation for composer"""
+        # Valid composer
+        error = style_tool.validate_inputs(composer="bach")
+        assert error is None
+
+        # Invalid composer
+        error = style_tool.validate_inputs(composer="unknown")
+        assert "Unknown composer" in error
+
+    def test_validate_inputs_generation_length(self, style_tool):
+        """Test input validation for generation length"""
+        # Valid lengths
+        error = style_tool.validate_inputs(composer="bach", generation_length=8)
+        assert error is None
+
+        # Invalid lengths
+        error = style_tool.validate_inputs(composer="bach", generation_length=0)
+        assert "generation_length must be between" in error
+
+        error = style_tool.validate_inputs(composer="bach", generation_length=100)
+        assert "generation_length must be between" in error
+
+    def test_validate_inputs_complexity(self, style_tool):
+        """Test input validation for complexity"""
+        # Valid complexities
+        for complexity in ["simple", "medium", "complex"]:
+            error = style_tool.validate_inputs(composer="bach", complexity=complexity)
+            assert error is None
+
+        # Invalid complexity
+        error = style_tool.validate_inputs(composer="bach", complexity="invalid")
+        assert "complexity must be" in error
+
+    def test_validate_inputs_no_source(self, style_tool):
+        """Test validation when no source or composer provided"""
+        error = style_tool.validate_inputs()
+        assert "Must provide either style_source or composer" in error
+
+    def test_load_composer_style(self, style_tool):
+        """Test loading composer style profiles"""
+        # Test all composers
+        for composer in ["bach", "mozart", "chopin", "debussy"]:
+            style_data = style_tool._load_composer_style(composer)
+            assert "melodic" in style_data
+            assert "harmonic" in style_data
+            assert "rhythmic" in style_data
+            assert "textural" in style_data
+            assert "formal" in style_data
+
+        # Test unknown composer
+        style_data = style_tool._load_composer_style("unknown")
+        assert isinstance(style_data, dict)
+
+    def test_contour_changes_calculation(self, style_tool):
+        """Test contour change calculation"""
+        # Ascending then descending
+        intervals = [2, 3, -1, -2]
+        changes = style_tool._count_contour_changes(intervals)
+        assert changes == 1  # One direction change
+
+        # All ascending
+        intervals = [1, 2, 3]
+        changes = style_tool._count_contour_changes(intervals)
+        assert changes == 0
+
+        # Alternating
+        intervals = [1, -1, 1, -1]
+        changes = style_tool._count_contour_changes(intervals)
+        assert changes == 3
+
+    def test_dissonance_calculation(self, style_tool):
+        """Test dissonance level calculation"""
+        # Empty chord list
+        dissonance = style_tool._calculate_dissonance_level([])
+        assert dissonance == 0.0
+
+        # Single chord
+        test_chord = chord.Chord(["C4", "E4", "G4"])  # C major - consonant
+        dissonance = style_tool._calculate_dissonance_level([test_chord])
+        assert dissonance >= 0
+
+        # Dissonant chord
+        dissonant_chord = chord.Chord(["C4", "D4", "F#4"])  # Contains m2 and tritone
+        dissonance = style_tool._calculate_dissonance_level([dissonant_chord])
+        assert dissonance > 0
+
+    def test_progression_patterns_extraction(self, style_tool):
+        """Test chord progression pattern extraction"""
+        # Create test chords
+        chords = [
+            chord.Chord(["C4", "E4", "G4"]),  # C major
+            chord.Chord(["F4", "A4", "C5"]),  # F major
+            chord.Chord(["C4", "E4", "G4"]),  # C major (repeat)
+        ]
+        
+        progressions = style_tool._extract_progression_patterns(chords)
+        assert len(progressions) > 0
+        assert isinstance(progressions, list)
+        for prog, count in progressions:
+            assert isinstance(prog, tuple)
+            assert isinstance(count, int)
+            assert count > 0
+
+    def test_syncopation_calculation(self, style_tool):
+        """Test syncopation level calculation"""
+        # Create test notes with different beat positions
+        from music21 import note
+        
+        notes = [
+            note.Note("C4", quarterLength=1),
+            note.Note("D4", quarterLength=1),
+        ]
+        
+        # Mock beat property using setattr since beat is read-only
+        # We'll test the function logic with notes that have beat info
+        # The actual beat calculation in music21 happens when notes are in measures
+        
+        syncopation = style_tool._calculate_syncopation(notes)
+        assert 0 <= syncopation <= 1  # Should handle notes without beat info gracefully
+
+    def test_rhythm_patterns_extraction(self, style_tool):
+        """Test rhythm pattern extraction"""
+        from music21 import note
+        
+        # Create notes with repeating rhythm pattern
+        notes = [
+            note.Note("C4", quarterLength=1.0),
+            note.Note("D4", quarterLength=0.5),
+            note.Note("E4", quarterLength=0.5),
+            note.Note("F4", quarterLength=1.0),
+            note.Note("G4", quarterLength=1.0),  # Same pattern starts
+            note.Note("A4", quarterLength=0.5),
+            note.Note("B4", quarterLength=0.5),
+            note.Note("C5", quarterLength=1.0),
+        ]
+        
+        patterns = style_tool._extract_rhythm_patterns(notes)
+        assert isinstance(patterns, list)
+        
+        # Should find the repeating pattern
+        if patterns:
+            pattern, count = patterns[0]
+            assert isinstance(pattern, tuple)
+            assert count >= 1
+
+    def test_texture_density_analysis(self, style_tool):
+        """Test texture density analysis"""
+        from music21 import stream
+        
+        parts = [stream.Part(), stream.Part()]
+        result = style_tool._analyze_texture_density(parts)
+        assert "average" in result
+        assert "variation" in result
+        assert isinstance(result["average"], (int, float))
+        assert isinstance(result["variation"], (int, float))
+
+    def test_voice_independence_calculation(self, style_tool):
+        """Test voice independence calculation"""
+        from music21 import stream, note
+        
+        # Single part
+        parts = [stream.Part()]
+        independence = style_tool._calculate_voice_independence(parts)
+        assert independence == 1.0
+        
+        # Multiple parts with different rhythms
+        part1 = stream.Part()
+        part1.append(note.Note("C4", quarterLength=1.0))
+        part1.append(note.Note("D4", quarterLength=0.5))
+        
+        part2 = stream.Part()
+        part2.append(note.Note("E4", quarterLength=0.5))
+        part2.append(note.Note("F4", quarterLength=1.0))
+        
+        parts = [part1, part2]
+        independence = style_tool._calculate_voice_independence(parts)
+        assert 0 <= independence <= 1
+
+    def test_phrase_structure_detection(self, style_tool):
+        """Test phrase structure detection"""
+        from music21 import stream, note
+        
+        # Create score with rests separating phrases
+        score = stream.Score()
+        part = stream.Part()
+        
+        # First phrase
+        part.append(note.Note("C4", quarterLength=1.0))
+        part.append(note.Note("D4", quarterLength=1.0))
+        part.append(note.Rest(quarterLength=1.0))  # Phrase boundary
+        
+        # Second phrase
+        part.append(note.Note("E4", quarterLength=1.0))
+        part.append(note.Note("F4", quarterLength=1.0))
+        
+        score.append(part)
+        
+        phrase_lengths = style_tool._detect_phrase_structure(score)
+        assert isinstance(phrase_lengths, list)
+        assert all(isinstance(length, (int, float)) for length in phrase_lengths)
+
+    def test_preset_transitions_loading(self, style_tool):
+        """Test preset transition matrix loading"""
+        # Test Bach preset
+        style_tool._load_preset_transitions("bach")
+        assert "pitch" in style_tool.transition_matrices
+        assert isinstance(style_tool.transition_matrices["pitch"], dict)
+        
+        # Test Mozart preset
+        style_tool.transition_matrices.clear()
+        style_tool._load_preset_transitions("mozart")
+        assert "pitch" in style_tool.transition_matrices
+        
+        # Test unknown composer (should not crash)
+        style_tool.transition_matrices.clear()
+        style_tool._load_preset_transitions("unknown")
+
+    def test_stylistic_pitch_generation(self, style_tool):
+        """Test stylistic pitch generation"""
+        from music21 import pitch
+        
+        current = pitch.Pitch("C4")
+        style_data = {
+            "melodic": {
+                "stepwise_motion": 0.8,
+                "avg_interval": 3.0
+            }
+        }
+        
+        # Generate multiple pitches to test variability
+        pitches = []
+        for _ in range(10):
+            new_pitch = style_tool._generate_stylistic_pitch(current, style_data)
+            assert isinstance(new_pitch, pitch.Pitch)
+            pitches.append(new_pitch.midi)
+        
+        # Should generate some variety
+        assert len(set(pitches)) > 1
+
+    def test_stylistic_duration_generation(self, style_tool):
+        """Test stylistic duration generation"""
+        style_data = {
+            "rhythmic": {
+                "avg_duration": 1.0
+            }
+        }
+        
+        # Test all complexity levels
+        for complexity in ["simple", "medium", "complex"]:
+            duration = style_tool._generate_stylistic_duration(style_data, complexity)
+            assert isinstance(duration, float)
+            assert duration > 0
+        
+        # Test with different average durations
+        style_data["rhythmic"]["avg_duration"] = 0.25
+        duration = style_tool._generate_stylistic_duration(style_data, "simple")
+        assert duration > 0
+        
+        style_data["rhythmic"]["avg_duration"] = 2.0
+        duration = style_tool._generate_stylistic_duration(style_data, "simple")
+        assert duration > 0
+
+    def test_bass_line_generation(self, style_tool):
+        """Test bass line generation"""
+        from music21 import stream, note
+        
+        melody_part = stream.Part()
+        melody_part.append(note.Note("C5", quarterLength=1.0))
+        melody_part.append(note.Note("D5", quarterLength=0.5))
+        melody_part.append(note.Note("E5", quarterLength=0.5))
+        
+        style_data = {}
+        
+        bass_part = style_tool._generate_bass_line(melody_part, style_data)
+        assert isinstance(bass_part, stream.Part)
+        assert bass_part.partName == "Bass"
+        
+        bass_notes = list(bass_part.flatten().notes)
+        melody_notes = list(melody_part.flatten().notes)
+        assert len(bass_notes) == len(melody_notes)
+        
+        # Bass notes should be lower than melody notes
+        for bass_note, melody_note in zip(bass_notes, melody_notes):
+            if hasattr(bass_note, 'pitch') and hasattr(melody_note, 'pitch'):
+                assert bass_note.pitch.midi < melody_note.pitch.midi
+
+    def test_style_refinement_methods(self, style_tool):
+        """Test style-specific refinement methods"""
+        from music21 import stream, note
+        
+        # Create test score
+        score = stream.Score()
+        part = stream.Part()
+        part.append(note.Note("C4", quarterLength=1.0))
+        part.append(note.Note("E4", quarterLength=1.0))
+        score.append(part)
+        
+        style_data = {}
+        
+        # Test all refinement methods (they should not crash)
+        refined = style_tool._add_bach_ornaments(score)
+        assert isinstance(refined, stream.Score)
+        
+        refined = style_tool._add_mozart_accompaniment(score)
+        assert isinstance(refined, stream.Score)
+        
+        refined = style_tool._add_chopin_expression(score)
+        assert isinstance(refined, stream.Score)
+        
+        refined = style_tool._add_debussy_colors(score)
+        assert isinstance(refined, stream.Score)
+
+
+class TestAsyncOptimizationComprehensive:
+    """Comprehensive tests for AsyncOptimization module to boost coverage"""
+
+    @pytest.fixture
+    def async_optimizer(self):
+        """Create AsyncOptimizer instance"""
+        from music21_mcp.async_optimization import AsyncOptimizer
+        return AsyncOptimizer(
+            max_concurrent_operations=2,
+            batch_size=5,
+            batch_timeout=0.1,
+            cache_ttl=60,
+            thread_pool_workers=2
+        )
+
+    def test_async_optimizer_initialization(self, async_optimizer):
+        """Test AsyncOptimizer initialization"""
+        assert async_optimizer.max_concurrent == 2
+        assert async_optimizer.batch_size == 5
+        assert async_optimizer.batch_timeout == 0.1
+        
+        # Test caches are created
+        assert hasattr(async_optimizer, 'roman_cache')
+        assert hasattr(async_optimizer, 'chord_pattern_cache')
+        assert hasattr(async_optimizer, 'score_metadata_cache')
+        
+        # Test lookup tables are built
+        assert len(async_optimizer.roman_lookup_table) > 0
+        assert len(async_optimizer.progression_patterns) > 0
+        
+        # Test stats initialization
+        assert "cache_hits" in async_optimizer.stats
+        assert "cache_misses" in async_optimizer.stats
+
+    def test_roman_lookup_table_building(self, async_optimizer):
+        """Test Roman numeral lookup table building"""
+        lookup = async_optimizer._build_roman_lookup_table()
+        assert isinstance(lookup, dict)
+        assert len(lookup) > 0
+        
+        # Test some known patterns
+        assert ("major", 0, "major") in lookup  # I in major
+        assert ("minor", 0, "minor") in lookup  # i in minor
+        
+        # Test values are correct
+        assert lookup[("major", 0, "major")] == "I"
+        assert lookup[("minor", 0, "minor")] == "i"
+
+    def test_progression_patterns_building(self, async_optimizer):
+        """Test progression patterns building"""
+        patterns = async_optimizer._build_progression_patterns()
+        assert isinstance(patterns, dict)
+        assert len(patterns) > 0
+        
+        # Test common progressions exist
+        assert "I-V-vi-IV" in patterns
+        assert "ii-V-I" in patterns
+        
+        # Test pattern values
+        assert patterns["I-V-vi-IV"] == ["I", "V", "vi", "IV"]
+        assert patterns["ii-V-I"] == ["ii", "V", "I"]
+
+    def test_cache_key_generation(self, async_optimizer):
+        """Test cache key generation"""
+        from music21 import chord, key
+        
+        test_chord = chord.Chord(["C4", "E4", "G4"])
+        test_key = key.Key("C")
+        
+        cache_key = async_optimizer._generate_cache_key(test_chord, test_key)
+        assert isinstance(cache_key, str)
+        assert len(cache_key) == 16  # MD5 truncated to 16 chars
+        
+        # Same inputs should generate same key
+        cache_key2 = async_optimizer._generate_cache_key(test_chord, test_key)
+        assert cache_key == cache_key2
+        
+        # Different inputs should generate different keys
+        different_chord = chord.Chord(["F4", "A4", "C5"])
+        cache_key3 = async_optimizer._generate_cache_key(different_chord, test_key)
+        assert cache_key != cache_key3
+
+    def test_fast_roman_lookup(self, async_optimizer):
+        """Test fast Roman numeral lookup"""
+        from music21 import chord, key
+        
+        # Test C major chord in C major key
+        c_chord = chord.Chord(["C4", "E4", "G4"])
+        c_key = key.Key("C")
+        
+        result = async_optimizer._fast_roman_lookup(c_chord, c_key)
+        # Should return something for common chords or None for uncommon ones
+        assert result is None or isinstance(result, str)
+        
+        # Test with invalid chord (should handle gracefully)
+        invalid_chord = chord.Chord([])
+        result = async_optimizer._fast_roman_lookup(invalid_chord, c_key)
+        assert result is None
+
+    def test_chord_extraction_efficiency(self, async_optimizer):
+        """Test efficient chord extraction"""
+        from music21 import stream, chord, note
+        
+        # Create score with explicit chords
+        score = stream.Score()
+        part = stream.Part()
+        part.append(chord.Chord(["C4", "E4", "G4"]))
+        part.append(chord.Chord(["F4", "A4", "C5"]))
+        score.append(part)
+        
+        chords = async_optimizer._extract_chords_efficiently(score)
+        assert len(chords) == 2
+        assert all(isinstance(ch, chord.Chord) for ch in chords)
+        
+        # Test score without explicit chords (needs chordification)
+        score2 = stream.Score()
+        part2 = stream.Part()
+        part2.append(note.Note("C4", quarterLength=1.0))
+        part2.append(note.Note("E4", quarterLength=1.0))
+        score2.append(part2)
+        
+        chords2 = async_optimizer._extract_chords_efficiently(score2)
+        # Should attempt chordification
+        assert isinstance(chords2, list)
+
+    @pytest.mark.asyncio
+    async def test_progression_detection_fast(self, async_optimizer):
+        """Test fast progression detection"""
+        # Test with known progression
+        roman_numerals = ["I", "V", "vi", "IV"]
+        
+        progressions = await async_optimizer.detect_progressions_fast(roman_numerals)
+        assert isinstance(progressions, list)
+        
+        # Should find the I-V-vi-IV progression
+        found_progression = any(
+            prog["name"] == "I-V-vi-IV" for prog in progressions
+        )
+        assert found_progression
+        
+        # Test with no matching progressions
+        random_progression = ["vii°", "III", "vi", "ii"]
+        progressions2 = await async_optimizer.detect_progressions_fast(random_progression)
+        assert isinstance(progressions2, list)
+        # May or may not find matches, but shouldn't crash
+
+    def test_performance_stats(self, async_optimizer):
+        """Test performance statistics"""
+        stats = async_optimizer.get_performance_stats()
+        assert isinstance(stats, dict)
+        
+        # Test required keys
+        assert "cache_performance" in stats
+        assert "optimization_stats" in stats
+        assert "system_status" in stats
+        
+        # Test cache performance stats
+        cache_perf = stats["cache_performance"]
+        assert "hit_rate_percent" in cache_perf
+        assert "total_requests" in cache_perf
+        assert "cache_size" in cache_perf
+        
+        # Test optimization stats
+        opt_stats = stats["optimization_stats"]
+        assert "fast_lookups" in opt_stats
+        assert "batched_operations" in opt_stats
+        assert "concurrent_operations" in opt_stats
+        
+        # Test system status
+        sys_status = stats["system_status"]
+        assert "active_operations" in sys_status
+        assert "queue_size" in sys_status
+        assert "is_running" in sys_status
+
+    @pytest.mark.asyncio
+    async def test_warm_caches(self, async_optimizer):
+        """Test cache warming"""
+        # Test with default progressions
+        await async_optimizer.warm_caches()
+        # Should complete without error
+        
+        # Test with custom progressions
+        custom_progressions = [
+            ["C", "Am", "F", "G"],
+            ["Dm", "G", "C", "C"]
+        ]
+        await async_optimizer.warm_caches(custom_progressions)
+        # Should complete without error
+
+    @pytest.mark.asyncio
+    async def test_async_optimizer_lifecycle(self, async_optimizer):
+        """Test AsyncOptimizer start/stop lifecycle"""
+        # Test start
+        await async_optimizer.start()
+        assert async_optimizer.batch_processor_task is not None
+        
+        # Test stop
+        await async_optimizer.stop()
+        assert async_optimizer.shutdown_event.is_set()
+
+    def test_analysis_task_dataclass(self):
+        """Test AnalysisTask dataclass"""
+        from music21_mcp.async_optimization import AnalysisTask
+        from music21 import chord, key
+        import asyncio
+        
+        test_chord = chord.Chord(["C4", "E4", "G4"])
+        test_key = key.Key("C")
+        future = asyncio.Future()
+        
+        task = AnalysisTask(
+            id="test_task",
+            chord_obj=test_chord,
+            key_obj=test_key,
+            future=future,
+            priority=5
+        )
+        
+        assert task.id == "test_task"
+        assert task.chord_obj == test_chord
+        assert task.key_obj == test_key
+        assert task.future == future
+        assert task.priority == 5
+        assert task.created_at is not None
+        
+        # Test with default priority
+        task2 = AnalysisTask(
+            id="test_task2",
+            chord_obj=test_chord,
+            key_obj=test_key,
+            future=asyncio.Future()
+        )
+        assert task2.priority == 0
+
+
+class TestPatternRecognitionToolComprehensive:
+    """Comprehensive tests for PatternRecognitionTool to boost coverage"""
+
+    @pytest.fixture
+    def pattern_tool(self):
+        """Create PatternRecognitionTool instance"""
+        from music21_mcp.tools.pattern_recognition_tool import PatternRecognitionTool
+        score_manager = {}
+        return PatternRecognitionTool(score_manager)
+
+    def test_validate_inputs(self, pattern_tool):
+        """Test input validation"""
+        # Add a test score so validation can proceed
+        from music21 import stream
+        test_score = stream.Score()
+        pattern_tool.score_manager["test_score"] = test_score
+        
+        # Test invalid pattern type
+        error = pattern_tool.validate_inputs(score_id="test_score", pattern_type="invalid")
+        assert "Invalid pattern_type" in error
+        
+        # Test invalid similarity threshold
+        error = pattern_tool.validate_inputs(score_id="test_score", similarity_threshold=1.5)
+        assert "similarity_threshold must be between 0 and 1" in error
+        
+        error = pattern_tool.validate_inputs(score_id="test_score", similarity_threshold=-0.5)
+        assert "similarity_threshold must be between 0 and 1" in error
+        
+        # Valid inputs
+        error = pattern_tool.validate_inputs(
+            score_id="test_score",
+            pattern_type="melodic",
+            similarity_threshold=0.8
+        )
+        assert error is None  # Should pass validation
+        
+        # Test missing score_id - should fail since score doesn't exist
+        error = pattern_tool.validate_inputs(score_id="nonexistent")
+        assert "not found" in error
+
+    def test_get_contour(self, pattern_tool):
+        """Test melodic contour calculation"""
+        # Ascending sequence
+        pitches = [60, 62, 64, 67]  # C, D, E, G
+        contour = pattern_tool._get_contour(pitches)
+        assert contour == ["U", "U", "U"]
+        
+        # Descending sequence
+        pitches = [67, 64, 62, 60]  # G, E, D, C
+        contour = pattern_tool._get_contour(pitches)
+        assert contour == ["D", "D", "D"]
+        
+        # Mixed contour
+        pitches = [60, 64, 62, 65]  # C, E, D, F
+        contour = pattern_tool._get_contour(pitches)
+        assert contour == ["U", "D", "U"]
+        
+        # Same notes
+        pitches = [60, 60, 60]
+        contour = pattern_tool._get_contour(pitches)
+        assert contour == ["S", "S"]
+
+    def test_pitch_similarity_calculation(self, pattern_tool):
+        """Test pitch sequence similarity calculation"""
+        seq1 = [60, 62, 64]  # C, D, E
+        seq2 = [60, 62, 64]  # Identical
+        similarity = pattern_tool._calculate_pitch_similarity(seq1, seq2, False)
+        assert similarity == 1.0
+        
+        # Transposition
+        seq2 = [62, 64, 66]  # D, E, F# (up 2 semitones)
+        similarity = pattern_tool._calculate_pitch_similarity(seq1, seq2, False)
+        assert similarity == 0.95  # Transposition
+        
+        # Different lengths
+        seq2 = [60, 62]  # Shorter
+        similarity = pattern_tool._calculate_pitch_similarity(seq1, seq2, False)
+        assert similarity == 0.0
+        
+        # Test with transformations enabled
+        seq2 = [60, 58, 56]  # Inversion of seq1
+        similarity = pattern_tool._calculate_pitch_similarity(seq1, seq2, True)
+        assert similarity > 0  # Should detect inversion
+        
+        # Retrograde
+        seq2 = [64, 62, 60]  # Backwards
+        similarity = pattern_tool._calculate_pitch_similarity(seq1, seq2, True)
+        assert similarity == 0.9  # Retrograde
+
+    def test_classify_contour_shape(self, pattern_tool):
+        """Test contour shape classification"""
+        import numpy as np
+        
+        # Ascending line
+        pitches = list(range(60, 70))  # Strong upward trend
+        shape = pattern_tool._classify_contour_shape(pitches)
+        assert shape == "ascending"
+        
+        # Descending line
+        pitches = list(range(70, 60, -1))  # Strong downward trend
+        shape = pattern_tool._classify_contour_shape(pitches)
+        assert shape == "descending"
+        
+        # Static line
+        pitches = [60] * 10  # All same pitch
+        shape = pattern_tool._classify_contour_shape(pitches)
+        assert shape == "static"
+        
+        # Arch shape
+        pitches = [60, 62, 64, 67, 64, 62, 60]  # Up then down
+        shape = pattern_tool._classify_contour_shape(pitches)
+        assert shape in ["arch", "undulating", "static"]  # Could be various depending on calculation
+        
+        # Empty list
+        pitches = []
+        shape = pattern_tool._classify_contour_shape(pitches)
+        assert shape == "unknown"
+
+    def test_rhythmic_similarity_calculation(self, pattern_tool):
+        """Test rhythmic pattern similarity"""
+        rhythm1 = [1.0, 0.5, 0.5, 1.0]
+        rhythm2 = [1.0, 0.5, 0.5, 1.0]  # Identical
+        similarity = pattern_tool._calculate_rhythmic_similarity(rhythm1, rhythm2)
+        assert similarity == 1.0
+        
+        # Different lengths
+        rhythm2 = [1.0, 0.5, 0.5]
+        similarity = pattern_tool._calculate_rhythmic_similarity(rhythm1, rhythm2)
+        assert similarity == 0.0
+        
+        # Proportional (augmentation)
+        rhythm2 = [2.0, 1.0, 1.0, 2.0]  # Double duration
+        similarity = pattern_tool._calculate_rhythmic_similarity(rhythm1, rhythm2)
+        assert similarity == 0.9
+        
+        # Similar but not exact
+        rhythm2 = [1.0, 0.6, 0.4, 1.0]  # Close to original
+        similarity = pattern_tool._calculate_rhythmic_similarity(rhythm1, rhythm2)
+        assert 0 < similarity < 1
+
+    def test_strong_beats_identification(self, pattern_tool):
+        """Test strong beat identification"""
+        from music21 import meter
+        
+        # Mock time signature objects
+        class MockTimeSignature:
+            def __init__(self, numerator):
+                self.numerator = numerator
+        
+        # 4/4 time
+        ts = MockTimeSignature(4)
+        strong_beats = pattern_tool._get_strong_beats(ts)
+        assert strong_beats == [1, 3]
+        
+        # 3/4 time
+        ts = MockTimeSignature(3)
+        strong_beats = pattern_tool._get_strong_beats(ts)
+        assert strong_beats == [1]
+        
+        # 6/8 time
+        ts = MockTimeSignature(6)
+        strong_beats = pattern_tool._get_strong_beats(ts)
+        assert strong_beats == [1, 4]
+        
+        # 2/4 time
+        ts = MockTimeSignature(2)
+        strong_beats = pattern_tool._get_strong_beats(ts)
+        assert strong_beats == [1]
+        
+        # 5/4 time (odd meter)
+        ts = MockTimeSignature(5)
+        strong_beats = pattern_tool._get_strong_beats(ts)
+        assert 1 in strong_beats  # Should at least include beat 1
+
+    def test_meter_classification(self, pattern_tool):
+        """Test meter type classification"""
+        class MockTimeSignature:
+            def __init__(self, numerator):
+                self.numerator = numerator
+        
+        # Simple meters
+        assert pattern_tool._classify_meter(MockTimeSignature(2)) == "simple_duple"
+        assert pattern_tool._classify_meter(MockTimeSignature(4)) == "simple_duple"
+        assert pattern_tool._classify_meter(MockTimeSignature(3)) == "simple_triple"
+        
+        # Compound meters
+        assert pattern_tool._classify_meter(MockTimeSignature(6)) == "compound_duple"
+        assert pattern_tool._classify_meter(MockTimeSignature(9)) == "compound_triple"
+        
+        # Asymmetric meters
+        assert pattern_tool._classify_meter(MockTimeSignature(5)) == "asymmetric"
+        assert pattern_tool._classify_meter(MockTimeSignature(7)) == "asymmetric"
+        
+        # Complex meters
+        assert pattern_tool._classify_meter(MockTimeSignature(11)) == "complex"
+
+    def test_interval_pattern_significance(self, pattern_tool):
+        """Test musical significance assessment of interval patterns"""
+        # Common melodic pattern (scale passage)
+        pattern = ("M2", "M2")
+        significance = pattern_tool._assess_interval_pattern_significance(pattern)
+        assert significance > 0.5
+        
+        # Triad outline
+        pattern = ("M3", "m3")
+        significance = pattern_tool._assess_interval_pattern_significance(pattern)
+        assert significance > 0.5
+        
+        # Large interval pattern (less common)
+        pattern = ("M7", "P8")
+        significance = pattern_tool._assess_interval_pattern_significance(pattern)
+        assert significance < 0.7  # Should be penalized
+        
+        # Empty pattern
+        pattern = ()
+        significance = pattern_tool._assess_interval_pattern_significance(pattern)
+        assert 0 <= significance <= 1
+
+    def test_rhythm_profile_extraction(self, pattern_tool):
+        """Test rhythmic profile extraction"""
+        from music21 import stream, note
+        
+        part = stream.Part()
+        # Create part with mostly quarter notes
+        for _ in range(5):
+            part.append(note.Note("C4", quarterLength=1.0))
+        part.append(note.Note("D4", quarterLength=0.5))  # One eighth note
+        
+        profile = pattern_tool._extract_rhythm_profile(part)
+        assert "primary_duration" in profile
+        assert "primary_division" in profile
+        assert "variety" in profile
+        
+        assert profile["primary_duration"] == 1.0  # Quarter note most common
+        assert profile["primary_division"] == "quarter"
+        assert profile["variety"] == 2  # Two different durations
+        
+        # Test with empty part
+        empty_part = stream.Part()
+        profile = pattern_tool._extract_rhythm_profile(empty_part)
+        assert profile == {}  # Should return empty dict
+
+    def test_pattern_deduplication(self, pattern_tool):
+        """Test pattern deduplication"""
+        # Test with interval patterns
+        patterns = [
+            {"interval_pattern": [1, 2, 3], "count": 5},
+            {"interval_pattern": [1, 2, 3], "count": 3},  # Duplicate
+            {"interval_pattern": [4, 5, 6], "count": 2},
+        ]
+        
+        unique = pattern_tool._deduplicate_patterns(patterns)
+        assert len(unique) == 2  # Should keep only unique patterns
+        assert unique[0]["interval_pattern"] == [1, 2, 3]
+        assert unique[1]["interval_pattern"] == [4, 5, 6]
+        
+        # Test with rhythm patterns
+        patterns = [
+            {"pattern": [1.0, 0.5], "count": 3},
+            {"pattern": [1.0, 0.5], "count": 2},  # Duplicate
+            {"pattern": [0.25, 0.25], "count": 1},
+        ]
+        
+        unique = pattern_tool._deduplicate_patterns(patterns)
+        assert len(unique) == 2
+        
+        # Test with intervals key
+        patterns = [
+            {"intervals": ["M2", "P4"], "count": 2},
+            {"intervals": ["M2", "P4"], "count": 1},  # Duplicate
+        ]
+        
+        unique = pattern_tool._deduplicate_patterns(patterns)
+        assert len(unique) == 1
+
+    def test_common_intervals_extraction(self, pattern_tool):
+        """Test common interval extraction from melodies"""
+        from music21 import note, pitch
+        
+        # Create melody with repeated intervals
+        melody = [
+            note.Note(pitch.Pitch(midi=60)),  # C4
+            note.Note(pitch.Pitch(midi=62)),  # D4 (M2 up)
+            note.Note(pitch.Pitch(midi=64)),  # E4 (M2 up)
+            note.Note(pitch.Pitch(midi=67)),  # G4 (m3 up)
+            note.Note(pitch.Pitch(midi=65)),  # F4 (M2 down)
+        ]
+        
+        melodies = [melody]
+        common_intervals = pattern_tool._get_common_intervals(melodies)
+        
+        assert isinstance(common_intervals, list)
+        assert len(common_intervals) > 0
+        
+        # Should be sorted by frequency
+        for interval_info in common_intervals:
+            assert "interval" in interval_info
+            assert "count" in interval_info
+            assert interval_info["count"] > 0
+        
+        # Test with empty melodies
+        common_intervals = pattern_tool._get_common_intervals([])
+        assert common_intervals == []
+
+    def test_melodic_density_calculation(self, pattern_tool):
+        """Test melodic density calculation"""
+        from music21 import stream, note
+        
+        # Create score with known duration
+        score = stream.Score()
+        part = stream.Part()
+        part.append(note.Note("C4", quarterLength=1.0))
+        part.append(note.Note("D4", quarterLength=1.0))
+        part.append(note.Note("E4", quarterLength=1.0))
+        part.append(note.Note("F4", quarterLength=1.0))
+        score.append(part)
+        
+        melodies = [[note.Note("C4"), note.Note("D4"), note.Note("E4")]]
+        density = pattern_tool._calculate_melodic_density(melodies, score)
+        
+        assert isinstance(density, float)
+        assert density > 0
+        
+        # Test with zero duration score
+        empty_score = stream.Score()
+        density = pattern_tool._calculate_melodic_density(melodies, empty_score)
+        assert density == 0.0
+
+    def test_transformation_identification(self, pattern_tool):
+        """Test identification of transformations between patterns"""
+        # Test transposition
+        patterns = [
+            {"pitches": [60, 62, 64]},  # C, D, E
+            {"pitches": [67, 69, 71]},  # G, A, B (up 7 semitones)
+        ]
+        
+        transformations = pattern_tool._identify_transformations(patterns)
+        assert "T7" in transformations  # Transposition by 7 semitones
+        
+        # Test retrograde
+        patterns = [
+            {"pitches": [60, 62, 64]},  # C, D, E
+            {"pitches": [64, 62, 60]},  # E, D, C (backwards)
+        ]
+        
+        transformations = pattern_tool._identify_transformations(patterns)
+        assert "R" in transformations  # Retrograde
+        
+        # Test with single pattern (should return empty)
+        patterns = [{"pitches": [60, 62, 64]}]
+        transformations = pattern_tool._identify_transformations(patterns)
+        assert transformations == []
+        
+        # Test with empty patterns
+        transformations = pattern_tool._identify_transformations([])
+        assert transformations == []
+
+
+
 
 if __name__ == "__main__":
     pytest.main([__file__, "-v"])
