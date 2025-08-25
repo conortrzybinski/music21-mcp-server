@@ -67,9 +67,9 @@ class TestCounterpointMassiveLines:
     def test_counterpoint_species_rules_comprehensive(self):
         """Test all five species counterpoint rules"""
         try:
-            from music21_mcp.tools.counterpoint_tool import CounterpointTool
+            from music21_mcp.tools.counterpoint_tool import CounterpointGeneratorTool
             
-            tool = CounterpointTool({})
+            tool = CounterpointGeneratorTool({})
             
             # Test each species rule checking
             for species_num in [1, 2, 3, 4, 5]:
@@ -98,9 +98,9 @@ class TestCounterpointMassiveLines:
     def test_interval_analysis_comprehensive(self):
         """Test comprehensive interval analysis"""
         try:
-            from music21_mcp.tools.counterpoint_tool import CounterpointTool
+            from music21_mcp.tools.counterpoint_tool import CounterpointGeneratorTool
             
-            tool = CounterpointTool({})
+            tool = CounterpointGeneratorTool({})
             
             # Test interval classification
             intervals_to_test = [
@@ -129,9 +129,9 @@ class TestCounterpointMassiveLines:
     def test_voice_leading_analysis_comprehensive(self):
         """Test comprehensive voice leading analysis"""
         try:
-            from music21_mcp.tools.counterpoint_tool import CounterpointTool
+            from music21_mcp.tools.counterpoint_tool import CounterpointGeneratorTool
             
-            tool = CounterpointTool({})
+            tool = CounterpointGeneratorTool({})
             
             # Test motion types
             motion_types = ["parallel", "similar", "oblique", "contrary"]
@@ -170,9 +170,9 @@ class TestCounterpointMassiveLines:
     def test_counterpoint_generation_algorithms(self):
         """Test counterpoint generation algorithms"""
         try:
-            from music21_mcp.tools.counterpoint_tool import CounterpointTool
+            from music21_mcp.tools.counterpoint_tool import CounterpointGeneratorTool
             
-            tool = CounterpointTool({})
+            tool = CounterpointGeneratorTool({})
             
             # Test different generation strategies
             strategies = ["random_walk", "rule_based", "genetic_algorithm", "constraint_satisfaction"]
@@ -206,9 +206,9 @@ class TestCounterpointMassiveLines:
     def test_cantus_firmus_validation_comprehensive(self):
         """Test comprehensive cantus firmus validation"""
         try:
-            from music21_mcp.tools.counterpoint_tool import CounterpointTool
+            from music21_mcp.tools.counterpoint_tool import CounterpointGeneratorTool
             
-            tool = CounterpointTool({})
+            tool = CounterpointGeneratorTool({})
             
             # Test cantus firmus rules
             cf_rules = [
