@@ -209,7 +209,7 @@ class TestScoreInfoToolCoverage:
     def test_analyze_instruments(self, score_info_tool):
         """Test instrument analysis"""
         from music21 import instrument
-        
+
         test_score = stream.Score()
         part = stream.Part()
         part.insert(0, instrument.Piano())
