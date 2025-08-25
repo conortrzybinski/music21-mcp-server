@@ -804,8 +804,10 @@ class TestAsyncOptimizationMassive:
 
         # Test operation queuing
         if hasattr(optimizer, "queue_operation"):
+
             def operation():
                 return {"result": "test"}
+
             future = optimizer.queue_operation(operation)
             assert future is not None
 
@@ -894,8 +896,10 @@ class TestRemainingModuleCoverage:
 
         # Test task submission
         if hasattr(processor, "submit_task"):
+
             def task(x):
                 return x * 2
+
             future = processor.submit_task(task, 5)
             result = asyncio.run(asyncio.wrap_future(future)) if future else 10
             assert result == 10

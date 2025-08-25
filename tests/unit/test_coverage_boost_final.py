@@ -64,7 +64,7 @@ class TestObservabilitySimple:
             logger,
             performance_timer,
         )
-        
+
         # Try to import log_performance, but it might not exist
         try:
             from music21_mcp.observability import log_performance
@@ -80,7 +80,7 @@ class TestObservabilitySimple:
     def test_performance_timer_usage(self):
         """Use performance timer in various ways"""
         from music21_mcp.observability import performance_timer
-        
+
         try:
             from music21_mcp.observability import log_performance
         except ImportError:
@@ -92,6 +92,7 @@ class TestObservabilitySimple:
 
         # Decorator (only if log_performance exists)
         if log_performance:
+
             @log_performance("decorated_function")
             def test_func():
                 return 42
@@ -102,7 +103,7 @@ class TestObservabilitySimple:
             # Mock decorator functionality
             def test_func():
                 return 42
-            
+
             result = test_func()
             assert result == 42
 
@@ -138,12 +139,14 @@ class TestAsyncOptimizationSimple:
         """Import async executor"""
         try:
             from music21_mcp.async_executor import AsyncExecutor
+
             executor = AsyncExecutor()
             assert executor is not None
         except ImportError:
             # AsyncExecutor might not exist with that exact name
             # Try alternative imports
             import music21_mcp.async_executor as async_exec_module
+
             assert async_exec_module is not None
 
     @pytest.mark.asyncio
@@ -229,6 +232,7 @@ class TestModulesBasicCoverage:
         ]
 
         import contextlib
+
         for module_name in modules_to_import:
             with contextlib.suppress(ImportError):
                 __import__(module_name)

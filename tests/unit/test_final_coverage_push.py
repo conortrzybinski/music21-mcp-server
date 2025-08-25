@@ -1139,7 +1139,9 @@ class TestAsyncOptimizationComprehensive:
 
             # Test concurrent task execution
             if hasattr(optimizer, "execute_concurrent_tasks"):
-                tasks = [lambda i=i: i for i in range(limit + 2)]  # More tasks than limit
+                tasks = [
+                    lambda i=i: i for i in range(limit + 2)
+                ]  # More tasks than limit
                 results = await optimizer.execute_concurrent_tasks(tasks)
                 assert len(results) >= limit
 
