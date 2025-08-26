@@ -62,12 +62,12 @@ class TestObservabilitySimple:
         try:
             from music21_mcp.observability import MetricsCollector  # noqa: N806
             from music21_mcp.observability import performance_timer
-            
+
             metrics_collector_class = MetricsCollector
         except ImportError:
             metrics_collector_class = None
             performance_timer = None
-            
+
         try:
             from music21_mcp.observability import logger
         except ImportError:
@@ -92,7 +92,7 @@ class TestObservabilitySimple:
             from music21_mcp.observability import performance_timer
         except ImportError:
             performance_timer = None
-            
+
         try:
             from music21_mcp.observability import log_performance
         except ImportError:
