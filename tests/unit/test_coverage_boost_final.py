@@ -61,11 +61,11 @@ class TestObservabilitySimple:
         """Import all observability components"""
         try:
             from music21_mcp.observability import (
-                MetricsCollector,
+                MetricsCollector as metrics_collector_class,
                 performance_timer,
             )
         except ImportError:
-            MetricsCollector = None
+            metrics_collector_class = None
             performance_timer = None
             
         try:
@@ -82,7 +82,7 @@ class TestObservabilitySimple:
         # These might not exist
         assert logger is None or logger is not None
         assert performance_timer is None or performance_timer is not None
-        assert MetricsCollector is None or MetricsCollector is not None
+        assert metrics_collector_class is None or metrics_collector_class is not None
         # log_performance might not exist
         assert log_performance is None or log_performance is not None
 
@@ -124,7 +124,7 @@ class TestObservabilitySimple:
         """Basic metrics collector functionality"""
         from music21_mcp.observability import MetricsCollector
 
-        collector = MetricsCollector()
+        collector = MetricsCollector()  # noqa: N806
 
         # Try calling methods that might exist
         try:
