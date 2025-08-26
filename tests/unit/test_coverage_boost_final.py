@@ -60,8 +60,10 @@ class TestObservabilitySimple:
     def test_observability_imports(self):
         """Import all observability components"""
         try:
-            from music21_mcp.observability import MetricsCollector  # noqa: N806
-            from music21_mcp.observability import performance_timer
+            from music21_mcp.observability import (
+                MetricsCollector,  # noqa: N806
+                performance_timer,
+            )
 
             metrics_collector_class = MetricsCollector
         except ImportError:
