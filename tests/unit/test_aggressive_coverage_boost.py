@@ -192,7 +192,7 @@ class TestScoreInfoToolCoverage:
         test_score = stream.Score()
         test_score.append(tempo.MetronomeMark(number=120))
 
-        if hasattr(score_info_tool, '_analyze_time_and_tempo'):
+        if hasattr(score_info_tool, "_analyze_time_and_tempo"):
             info = score_info_tool._analyze_time_and_tempo(test_score)
             assert "tempo_bpm" in info
         else:
@@ -208,7 +208,7 @@ class TestScoreInfoToolCoverage:
             part.append(note.Note("C4", quarterLength=1.0))
         test_score.append(part)
 
-        if hasattr(score_info_tool, '_analyze_structure'):
+        if hasattr(score_info_tool, "_analyze_structure"):
             info = score_info_tool._analyze_structure(test_score)
             assert "duration_quarters" in info
             assert "num_measures" in info
@@ -229,7 +229,7 @@ class TestScoreInfoToolCoverage:
         part.append(note.Note("C6", quarterLength=1.0))  # High
         test_score.append(part)
 
-        if hasattr(score_info_tool, '_analyze_instruments'):
+        if hasattr(score_info_tool, "_analyze_instruments"):
             instruments = score_info_tool._analyze_instruments(test_score)
             assert isinstance(instruments, list)
             if instruments:
@@ -251,7 +251,7 @@ class TestScoreInfoToolCoverage:
         part.append(note.Note("C4", quarterLength=1.0))
         test_score.append(part)
 
-        if hasattr(score_info_tool, '_analyze_detailed_structure'):
+        if hasattr(score_info_tool, "_analyze_detailed_structure"):
             info = score_info_tool._analyze_detailed_structure(test_score)
             assert isinstance(info, dict)
         else:
@@ -324,7 +324,7 @@ class TestChordAnalysisToolCoverage:
         part.append(chord.Chord(["D4", "F4", "A4"]))
         test_score.append(part)
 
-        if hasattr(chord_tool, '_extract_chords'):
+        if hasattr(chord_tool, "_extract_chords"):
             chords = chord_tool._extract_chords(test_score)
             assert len(chords) == 2
             assert all(isinstance(c, chord.Chord) for c in chords)
@@ -336,7 +336,7 @@ class TestChordAnalysisToolCoverage:
     def test_analyze_single_chord(self, chord_tool):
         """Test single chord analysis"""
         test_chord = chord.Chord(["C4", "E4", "G4"])
-        if hasattr(chord_tool, '_analyze_chord'):
+        if hasattr(chord_tool, "_analyze_chord"):
             analysis = chord_tool._analyze_chord(test_chord)
             assert "pitches" in analysis
             assert "intervals" in analysis
@@ -350,7 +350,7 @@ class TestChordAnalysisToolCoverage:
     def test_get_chord_intervals(self, chord_tool):
         """Test chord interval calculation"""
         test_chord = chord.Chord(["C4", "E4", "G4"])
-        if hasattr(chord_tool, '_get_chord_intervals'):
+        if hasattr(chord_tool, "_get_chord_intervals"):
             intervals = chord_tool._get_chord_intervals(test_chord)
             assert len(intervals) >= 2  # Should have intervals between notes
             assert all(isinstance(i, str) for i in intervals)
@@ -363,7 +363,7 @@ class TestChordAnalysisToolCoverage:
         """Test chord type identification"""
         # Major triad
         test_chord = chord.Chord(["C4", "E4", "G4"])
-        if hasattr(chord_tool, '_identify_chord_type'):
+        if hasattr(chord_tool, "_identify_chord_type"):
             chord_type = chord_tool._identify_chord_type(test_chord)
             assert chord_type is not None
         else:
@@ -374,7 +374,7 @@ class TestChordAnalysisToolCoverage:
     def test_get_chord_quality(self, chord_tool):
         """Test chord quality detection"""
         test_chord = chord.Chord(["C4", "E4", "G4"])
-        if hasattr(chord_tool, '_get_chord_quality'):
+        if hasattr(chord_tool, "_get_chord_quality"):
             quality = chord_tool._get_chord_quality(test_chord)
             assert quality is not None
         else:
@@ -428,7 +428,7 @@ class TestListToolCoverage:
 
     def test_list_tool_parameters_schema(self, list_tool):
         """Test parameters schema"""
-        if hasattr(list_tool, 'get_parameters_schema'):
+        if hasattr(list_tool, "get_parameters_schema"):
             schema = list_tool.get_parameters_schema()
             # List tool might not have parameters
             assert "properties" in schema
@@ -482,7 +482,7 @@ class TestListToolCoverage:
         part.append(note.Note("D4", quarterLength=2.0))
         test_score.append(part)
 
-        if hasattr(list_tool, '_get_score_info'):
+        if hasattr(list_tool, "_get_score_info"):
             info = list_tool._get_score_info("test", test_score)
             assert info["id"] == "test"
             assert "parts" in info
@@ -512,7 +512,7 @@ class TestDeleteToolCoverage:
     def test_delete_tool_initialization(self, delete_tool):
         """Test tool initialization"""
         assert hasattr(delete_tool, "score_manager")
-        if hasattr(delete_tool, 'get_parameters_schema'):
+        if hasattr(delete_tool, "get_parameters_schema"):
             schema = delete_tool.get_parameters_schema()
             assert "properties" in schema
         else:
@@ -587,7 +587,7 @@ class TestExportToolCoverage:
     def test_export_tool_initialization(self, export_tool):
         """Test tool initialization"""
         assert hasattr(export_tool, "score_manager")
-        if hasattr(export_tool, 'get_parameters_schema'):
+        if hasattr(export_tool, "get_parameters_schema"):
             schema = export_tool.get_parameters_schema()
             assert "properties" in schema
         else:
@@ -620,7 +620,7 @@ class TestExportToolCoverage:
 
     def test_get_supported_formats(self, export_tool):
         """Test supported formats"""
-        if hasattr(export_tool, '_get_supported_formats'):
+        if hasattr(export_tool, "_get_supported_formats"):
             formats = export_tool._get_supported_formats()
             assert "musicxml" in formats
             assert "midi" in formats
@@ -633,7 +633,7 @@ class TestExportToolCoverage:
     @patch("tempfile.NamedTemporaryFile")
     def test_export_to_musicxml(self, mock_temp_file, export_tool):
         """Test MusicXML export"""
-        if hasattr(export_tool, '_export_to_musicxml'):
+        if hasattr(export_tool, "_export_to_musicxml"):
             mock_file = Mock()
             mock_file.name = "/tmp/test.xml"
             mock_temp_file.return_value.__enter__.return_value = mock_file
@@ -653,7 +653,7 @@ class TestExportToolCoverage:
     @patch("tempfile.NamedTemporaryFile")
     def test_export_to_midi(self, mock_temp_file, export_tool):
         """Test MIDI export"""
-        if hasattr(export_tool, '_export_to_midi'):
+        if hasattr(export_tool, "_export_to_midi"):
             mock_file = Mock()
             mock_file.name = "/tmp/test.mid"
             mock_temp_file.return_value.__enter__.return_value = mock_file
@@ -721,7 +721,7 @@ class TestKeyAnalysisToolCoverage:
         # Key tool doesn't have name or get_parameters_schema attributes
         assert key_tool is not None
         # Check if it has ALGORITHMS attribute
-        if hasattr(key_tool, 'ALGORITHMS'):
+        if hasattr(key_tool, "ALGORITHMS"):
             assert key_tool.ALGORITHMS is not None
 
     def test_validate_inputs_missing_score(self, key_tool):
@@ -739,7 +739,7 @@ class TestKeyAnalysisToolCoverage:
     def test_analyze_key_krumhansl(self, key_tool):
         """Test Krumhansl-Schmuckler key analysis"""
         test_score = key_tool.score_manager["test_score"]
-        if hasattr(key_tool, '_analyze_key_krumhansl'):
+        if hasattr(key_tool, "_analyze_key_krumhansl"):
             key_result = key_tool._analyze_key_krumhansl(test_score)
             assert key_result is not None
             assert hasattr(key_result, "name")
@@ -751,7 +751,7 @@ class TestKeyAnalysisToolCoverage:
     def test_analyze_key_aarden(self, key_tool):
         """Test Aarden-Essen key analysis"""
         test_score = key_tool.score_manager["test_score"]
-        if hasattr(key_tool, '_analyze_key_aarden'):
+        if hasattr(key_tool, "_analyze_key_aarden"):
             key_result = key_tool._analyze_key_aarden(test_score)
             assert key_result is not None
             assert hasattr(key_result, "name")
@@ -763,7 +763,7 @@ class TestKeyAnalysisToolCoverage:
     def test_get_key_confidence(self, key_tool):
         """Test key confidence calculation"""
         test_score = key_tool.score_manager["test_score"]
-        if hasattr(key_tool, '_get_key_confidence'):
+        if hasattr(key_tool, "_get_key_confidence"):
             confidence = key_tool._get_key_confidence(test_score)
             assert isinstance(confidence, float)
             assert 0.0 <= confidence <= 1.0
@@ -776,7 +776,7 @@ class TestKeyAnalysisToolCoverage:
     def test_detect_modulations(self, key_tool):
         """Test modulation detection"""
         test_score = key_tool.score_manager["test_score"]
-        if hasattr(key_tool, '_detect_modulations'):
+        if hasattr(key_tool, "_detect_modulations"):
             modulations = key_tool._detect_modulations(test_score)
             assert isinstance(modulations, list)
         else:
@@ -787,7 +787,7 @@ class TestKeyAnalysisToolCoverage:
     def test_get_related_keys(self, key_tool):
         """Test related key detection"""
         test_key = key.Key("C")
-        if hasattr(key_tool, '_get_related_keys'):
+        if hasattr(key_tool, "_get_related_keys"):
             related = key_tool._get_related_keys(test_key)
             assert isinstance(related, list)
             assert len(related) > 0
@@ -879,7 +879,7 @@ class TestHarmonyAnalysisToolCoverage:
     def test_extract_chords_for_analysis(self, harmony_tool):
         """Test chord extraction for harmony analysis"""
         test_score = harmony_tool.score_manager["test_score"]
-        if hasattr(harmony_tool, '_extract_chords'):
+        if hasattr(harmony_tool, "_extract_chords"):
             chords = harmony_tool._extract_chords(test_score)
             assert len(chords) > 0
             assert all(isinstance(c, chord.Chord) for c in chords)
@@ -893,7 +893,7 @@ class TestHarmonyAnalysisToolCoverage:
         test_score = harmony_tool.score_manager["test_score"]
         test_key = key.Key("C")
 
-        if hasattr(harmony_tool, '_analyze_roman_numerals'):
+        if hasattr(harmony_tool, "_analyze_roman_numerals"):
             # Extract chords first before passing to analysis
             try:
                 test_chords = [chord.Chord(["C4", "E4", "G4"]), chord.Chord(["F4", "A4", "C5"])]
@@ -914,7 +914,7 @@ class TestHarmonyAnalysisToolCoverage:
         test_score = harmony_tool.score_manager["test_score"]
         test_key = key.Key("C")
 
-        if hasattr(harmony_tool, '_analyze_functional'):
+        if hasattr(harmony_tool, "_analyze_functional"):
             analysis = harmony_tool._analyze_functional(test_score, test_key)
             assert isinstance(analysis, list)
             assert len(analysis) > 0
@@ -928,7 +928,7 @@ class TestHarmonyAnalysisToolCoverage:
         """Test chord progression analysis"""
         roman_numerals = ["I", "IV", "V", "I"]
 
-        if hasattr(harmony_tool, '_analyze_progression'):
+        if hasattr(harmony_tool, "_analyze_progression"):
             progression = harmony_tool._analyze_progression(roman_numerals)
             assert "progression_name" in progression
             assert "cadences" in progression
@@ -1019,7 +1019,7 @@ class TestVoiceLeadingToolCoverage:
         """Test tool initialization"""
         assert hasattr(voice_leading_tool, "score_manager")
         # Check if tool has parameter schema method
-        if hasattr(voice_leading_tool, 'get_parameters_schema'):
+        if hasattr(voice_leading_tool, "get_parameters_schema"):
             schema = voice_leading_tool.get_parameters_schema()
             assert "properties" in schema
         else:
@@ -1041,7 +1041,7 @@ class TestVoiceLeadingToolCoverage:
     def test_extract_parts(self, voice_leading_tool):
         """Test part extraction"""
         test_score = voice_leading_tool.score_manager["test_score"]
-        if hasattr(voice_leading_tool, '_extract_parts'):
+        if hasattr(voice_leading_tool, "_extract_parts"):
             parts = voice_leading_tool._extract_parts(test_score)
             assert len(parts) >= 2  # Should have soprano and bass
             assert all(isinstance(p, stream.Part) for p in parts)
@@ -1054,10 +1054,10 @@ class TestVoiceLeadingToolCoverage:
         """Test voice leading analysis"""
         test_score = voice_leading_tool.score_manager["test_score"]
         
-        if hasattr(voice_leading_tool, '_extract_parts'):
+        if hasattr(voice_leading_tool, "_extract_parts"):
             parts = voice_leading_tool._extract_parts(test_score)
             
-            if hasattr(voice_leading_tool, '_analyze_voice_leading'):
+            if hasattr(voice_leading_tool, "_analyze_voice_leading"):
                 analysis = voice_leading_tool._analyze_voice_leading(parts)
                 assert "intervals" in analysis
                 assert "motion_types" in analysis
@@ -1083,7 +1083,7 @@ class TestVoiceLeadingToolCoverage:
         part2.append(note.Note("E4", quarterLength=1.0))
         part2.append(note.Note("F4", quarterLength=1.0))
 
-        if hasattr(voice_leading_tool, '_calculate_intervals'):
+        if hasattr(voice_leading_tool, "_calculate_intervals"):
             intervals = voice_leading_tool._calculate_intervals([part1, part2])
             assert isinstance(intervals, list)
             assert len(intervals) > 0
@@ -1100,7 +1100,7 @@ class TestVoiceLeadingToolCoverage:
             (interval.Interval("P5"), interval.Interval("P4")),  # Oblique motion
         ]
 
-        if hasattr(voice_leading_tool, '_identify_motion_types'):
+        if hasattr(voice_leading_tool, "_identify_motion_types"):
             motion_types = voice_leading_tool._identify_motion_types(intervals)
             assert isinstance(motion_types, list)
             assert len(motion_types) > 0
@@ -1199,7 +1199,7 @@ class TestQuickCoverageBoosters:
         # Test basic functionality
         cache = PerformanceCache(max_size=100)
         # Check if max_size attribute exists
-        if hasattr(cache, 'max_size'):
+        if hasattr(cache, "max_size"):
             assert cache.max_size == 100
         else:
             # Cache might not have max_size attribute
@@ -1207,7 +1207,7 @@ class TestQuickCoverageBoosters:
         
         # Try to import other classes that might not exist
         try:
-            from music21_mcp.performance_cache import CacheStats, CacheEntry
+            from music21_mcp.performance_cache import CacheEntry, CacheStats
             assert CacheStats is not None
             assert CacheEntry is not None
         except ImportError:
