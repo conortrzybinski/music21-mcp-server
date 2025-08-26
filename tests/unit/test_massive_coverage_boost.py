@@ -128,7 +128,8 @@ class TestMemoryManagerMassive:
         try:
             from music21_mcp.memory_manager import MemoryManager
 
-            manager = MemoryManager(warning_threshold=80.0, critical_threshold=95.0)
+            # MemoryManager doesn't have warning_threshold parameter
+            manager = MemoryManager(max_memory_mb=100)
 
             # Test threshold checks
             if hasattr(manager, "is_above_warning_threshold"):
@@ -155,10 +156,12 @@ class TestObservabilityMassive:
 
     def test_logger_configuration(self):
         """Test logger setup and configuration"""
-        from music21_mcp.observability import logger
+        from music21_mcp.observability import get_logger
 
+        logger = get_logger("test_logger")
         assert logger is not None
-        assert logger.name is not None
+        # StructuredLogger doesn't have a 'name' attribute
+        assert hasattr(logger, "info")
 
         # Test logging levels
         logger.debug("Debug test message")
@@ -168,16 +171,16 @@ class TestObservabilityMassive:
 
     def test_performance_timer_context(self):
         """Test performance timer context manager"""
-        from music21_mcp.observability import performance_timer
+        from music21_mcp.observability import monitor_performance
 
-        # Test as context manager
-        with performance_timer("test_operation") as timer:
+        # Test as decorator
+        @monitor_performance("test_operation")
+        def test_func():
             time.sleep(0.01)  # Small delay
-            assert timer is not None
-
-        # Test direct usage
-        timer = performance_timer("direct_test")
-        assert timer is not None
+            return "result"
+        
+        result = test_func()
+        assert result == "result"
 
     def test_metrics_collection(self):
         """Test metrics collection functionality"""
@@ -209,9 +212,9 @@ class TestObservabilityMassive:
 
     def test_log_performance_decorator(self):
         """Test performance logging decorator"""
-        from music21_mcp.observability import log_performance
+        from music21_mcp.observability import monitor_performance
 
-        @log_performance("test_function")
+        @monitor_performance("test_function")
         def test_function(x, y):
             time.sleep(0.001)
             return x + y
@@ -299,7 +302,7 @@ class TestHarmonizationToolMassive:
             assert mock_tool["name"] == "harmonization"
             return
 
-        assert harmonization_tool.name == "harmonization"
+        # HarmonizationTool doesn't have a name attribute
         assert hasattr(harmonization_tool, "score_manager")
 
     def test_harmonic_style_analysis(self, harmonization_tool):
@@ -904,10 +907,12 @@ class TestRemainingModuleCoverage:
             result = asyncio.run(asyncio.wrap_future(future)) if future else 10
             assert result == 10
 
-        # Test batch processing
+        # Test batch processing with processor_func
         if hasattr(processor, "process_batch"):
-            tasks = [lambda i=i: i for i in range(5)]
-            results = asyncio.run(processor.process_batch(tasks))
+            def processor_func(item):
+                return item * 2
+            items = list(range(5))
+            results = asyncio.run(processor.process_batch(items, processor_func))
             assert len(results) >= 0
 
     def test_cache_warmer_comprehensive(self):
@@ -959,9 +964,9 @@ class TestRemainingModuleCoverage:
 
     def test_services_comprehensive(self):
         """Comprehensive services testing"""
-        from music21_mcp.services import get_music_analysis_service
+        from music21_mcp.services import MusicAnalysisService
 
-        service = get_music_analysis_service()
+        service = MusicAnalysisService()
 
         # Test service methods exist
         assert hasattr(service, "import_score")
