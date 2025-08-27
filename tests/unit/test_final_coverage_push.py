@@ -57,7 +57,7 @@ class TestCounterpointMassiveLines:
             from music21_mcp.tools.counterpoint_tool import (
                 CounterpointGeneratorTool,
             )
-            
+
             # Try to import additional classes if they exist
             try:
                 from music21_mcp.tools.counterpoint_tool import (
@@ -66,6 +66,7 @@ class TestCounterpointMassiveLines:
                     Species,
                     VoiceType,
                 )
+
                 # Test enums and constants if they exist
                 assert Species is not None
                 assert CounterpointRules is not None

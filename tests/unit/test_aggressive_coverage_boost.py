@@ -344,7 +344,11 @@ class TestChordAnalysisToolCoverage:
             assert len(analysis["pitches"]) == 3
         else:
             # Mock chord analysis
-            analysis = {"pitches": ["C4", "E4", "G4"], "intervals": ["M3", "m3"], "root": "C"}
+            analysis = {
+                "pitches": ["C4", "E4", "G4"],
+                "intervals": ["M3", "m3"],
+                "root": "C",
+            }
             assert len(analysis["pitches"]) == 3
 
     def test_get_chord_intervals(self, chord_tool):
@@ -391,8 +395,10 @@ class TestChordAnalysisToolCoverage:
         # Check for any chord-related keys that might exist
         chord_keys = ["chords", "chord_progression", "chord_analysis"]
         has_chord_data = any(key in result for key in chord_keys)
-        assert has_chord_data, f"Expected one of {chord_keys} in result keys: {list(result.keys())}"
-        
+        assert has_chord_data, (
+            f"Expected one of {chord_keys} in result keys: {list(result.keys())}"
+        )
+
         # Check for summary or message
         summary_keys = ["summary", "message", "analysis_summary"]
         has_summary = any(key in result for key in summary_keys)
@@ -455,7 +461,7 @@ class TestListToolCoverage:
             else:
                 # Fallback - just check that scores exist
                 score_ids.append("found_score")
-        
+
         assert "score1" in score_ids or len(score_ids) >= 3
         assert "score2" in score_ids or len(score_ids) >= 3
         assert "empty_score" in score_ids or len(score_ids) >= 3
@@ -544,7 +550,9 @@ class TestDeleteToolCoverage:
         assert "score1" not in delete_tool.score_manager
         # Message could be "deleted successfully" or "Deleted score"
         message_keywords = ["deleted successfully", "Deleted score", "deleted"]
-        has_delete_message = any(keyword in result["message"].lower() for keyword in message_keywords)
+        has_delete_message = any(
+            keyword in result["message"].lower() for keyword in message_keywords
+        )
         assert has_delete_message, f"Expected delete message in: {result['message']}"
 
     @pytest.mark.asyncio
@@ -677,7 +685,12 @@ class TestExportToolCoverage:
             result = await export_tool.execute(score_id="test_score", format="musicxml")
             assert result["status"] == "success"
             # Check for file path or similar export indicators
-            export_indicators = ["file_path", "exported_file", "output_file", "export_path"]
+            export_indicators = [
+                "file_path",
+                "exported_file",
+                "output_file",
+                "export_path",
+            ]
             has_export_data = any(key in result for key in export_indicators)
             # Export might not create actual file in test, so this is optional
             if not has_export_data:
@@ -807,7 +820,7 @@ class TestKeyAnalysisToolCoverage:
         key_keys = ["key", "analysis_key", "detected_key", "primary_key"]
         has_key_data = any(key in result for key in key_keys)
         assert has_key_data, f"Expected one of {key_keys} in result"
-        
+
         # Confidence might be in different locations
         confidence_keys = ["confidence", "key_confidence", "certainty"]
         has_confidence = any(key in result for key in confidence_keys)
@@ -896,12 +909,18 @@ class TestHarmonyAnalysisToolCoverage:
         if hasattr(harmony_tool, "_analyze_roman_numerals"):
             # Extract chords first before passing to analysis
             try:
-                test_chords = [chord.Chord(["C4", "E4", "G4"]), chord.Chord(["F4", "A4", "C5"])]
+                test_chords = [
+                    chord.Chord(["C4", "E4", "G4"]),
+                    chord.Chord(["F4", "A4", "C5"]),
+                ]
                 analysis = harmony_tool._analyze_roman_numerals(test_chords, test_score)
                 assert isinstance(analysis, list)
             except Exception:
                 # If the method fails, mock the result
-                analysis = [{"roman_numeral": "I", "chord": "C"}, {"roman_numeral": "IV", "chord": "F"}]
+                analysis = [
+                    {"roman_numeral": "I", "chord": "C"},
+                    {"roman_numeral": "IV", "chord": "F"},
+                ]
                 assert isinstance(analysis, list)
         else:
             # Mock roman numeral analysis
@@ -947,10 +966,18 @@ class TestHarmonyAnalysisToolCoverage:
 
         assert result["status"] == "success"
         # Check for harmony analysis data (actual keys from the tool)
-        analysis_keys = ["analysis", "harmony_analysis", "roman_numerals", "chord_progressions", "functional_analysis"]
+        analysis_keys = [
+            "analysis",
+            "harmony_analysis",
+            "roman_numerals",
+            "chord_progressions",
+            "functional_analysis",
+        ]
         has_analysis = any(key in result for key in analysis_keys)
-        assert has_analysis, f"Expected one of {analysis_keys} in result keys: {list(result.keys())}"
-        
+        assert has_analysis, (
+            f"Expected one of {analysis_keys} in result keys: {list(result.keys())}"
+        )
+
         # Key data might not be present in harmony analysis
         key_keys = ["key", "analysis_key", "detected_key"]
         has_key = any(key in result for key in key_keys)
@@ -1053,23 +1080,29 @@ class TestVoiceLeadingToolCoverage:
     def test_analyze_voice_leading(self, voice_leading_tool):
         """Test voice leading analysis"""
         test_score = voice_leading_tool.score_manager["test_score"]
-        
+
         if hasattr(voice_leading_tool, "_extract_parts"):
             parts = voice_leading_tool._extract_parts(test_score)
-            
+
             if hasattr(voice_leading_tool, "_analyze_voice_leading"):
                 analysis = voice_leading_tool._analyze_voice_leading(parts)
                 assert "intervals" in analysis
                 assert "motion_types" in analysis
             else:
                 # Mock voice leading analysis
-                analysis = {"intervals": ["P5", "P4"], "motion_types": ["oblique", "contrary"]}
+                analysis = {
+                    "intervals": ["P5", "P4"],
+                    "motion_types": ["oblique", "contrary"],
+                }
                 assert "intervals" in analysis
                 assert "motion_types" in analysis
         else:
             # Mock parts extraction and analysis
             parts = [test_score.parts[0]] if test_score.parts else []
-            analysis = {"intervals": ["P5", "P4"], "motion_types": ["oblique", "contrary"]}
+            analysis = {
+                "intervals": ["P5", "P4"],
+                "motion_types": ["oblique", "contrary"],
+            }
             assert "intervals" in analysis
             assert "motion_types" in analysis
 
@@ -1117,10 +1150,19 @@ class TestVoiceLeadingToolCoverage:
 
         assert result["status"] == "success"
         # Check for voice leading analysis data (actual keys from the tool)
-        vl_keys = ["voice_leading", "voice_leading_analysis", "analysis", "parallel_issues", "voice_crossings", "smoothness_analysis"]
+        vl_keys = [
+            "voice_leading",
+            "voice_leading_analysis",
+            "analysis",
+            "parallel_issues",
+            "voice_crossings",
+            "smoothness_analysis",
+        ]
         has_vl_data = any(key in result for key in vl_keys)
-        assert has_vl_data, f"Expected one of {vl_keys} in result keys: {list(result.keys())}"
-        
+        assert has_vl_data, (
+            f"Expected one of {vl_keys} in result keys: {list(result.keys())}"
+        )
+
         # Summary data
         summary_keys = ["summary", "message", "analysis_summary"]
         has_summary = any(key in result for key in summary_keys)
@@ -1143,16 +1185,14 @@ class TestQuickCoverageBoosters:
         """Test services.py coverage"""
         try:
             from music21_mcp.services import MusicAnalysisService
+
             service = MusicAnalysisService()
             assert service is not None
             assert hasattr(service, "import_score")
             assert hasattr(service, "list_scores")
         except ImportError:
             # Mock service functionality if import fails
-            mock_service = {
-                "import_score": True,
-                "list_scores": True
-            }
+            mock_service = {"import_score": True, "list_scores": True}
             assert mock_service["import_score"]
 
     def test_observability_module_coverage(self):
@@ -1162,6 +1202,7 @@ class TestQuickCoverageBoosters:
                 MetricsCollector,
                 performance_timer,
             )
+
             assert performance_timer is not None
             assert MetricsCollector is not None
 
@@ -1171,18 +1212,20 @@ class TestQuickCoverageBoosters:
         except ImportError:
             # If imports fail, just pass
             pass
-            
+
         # Try to import logger separately
         try:
             from music21_mcp.observability import logger
+
             assert logger is not None
         except ImportError:
             # logger might not exist with that name
             pass
-        
+
         # Try to import log_performance, but it might not exist
         try:
             from music21_mcp.observability import log_performance
+
             assert log_performance is not None
         except ImportError:
             # log_performance doesn't exist, that's ok
@@ -1204,10 +1247,11 @@ class TestQuickCoverageBoosters:
         else:
             # Cache might not have max_size attribute
             assert cache is not None
-        
+
         # Try to import other classes that might not exist
         try:
             from music21_mcp.performance_cache import CacheEntry, CacheStats
+
             assert CacheStats is not None
             assert CacheEntry is not None
         except ImportError:
@@ -1218,6 +1262,7 @@ class TestQuickCoverageBoosters:
         """Test async_executor.py basic functionality"""
         try:
             from music21_mcp.async_executor import async_executor
+
             assert async_executor is not None
             # Test if it has expected attributes
             if hasattr(async_executor, "max_workers"):
@@ -1225,6 +1270,7 @@ class TestQuickCoverageBoosters:
         except ImportError:
             # async_executor might not exist or be named differently
             import music21_mcp.async_executor as async_exec_module
+
             assert async_exec_module is not None
 
 

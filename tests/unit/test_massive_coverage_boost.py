@@ -178,7 +178,7 @@ class TestObservabilityMassive:
         def test_func():
             time.sleep(0.01)  # Small delay
             return "result"
-        
+
         result = test_func()
         assert result == "result"
 
@@ -909,8 +909,10 @@ class TestRemainingModuleCoverage:
 
         # Test batch processing with processor_func
         if hasattr(processor, "process_batch"):
+
             def processor_func(item):
                 return item * 2
+
             items = list(range(5))
             results = asyncio.run(processor.process_batch(items, processor_func))
             assert len(results) >= 0
