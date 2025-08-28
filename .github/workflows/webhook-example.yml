@@ -1,0 +1,397 @@
+# Example GitHub Actions Workflow with Discord Webhook Integration
+# This workflow demonstrates how to integrate Discord webhooks into CI/CD pipelines
+# 
+# To enable this workflow:
+# 1. Set up Discord webhook following .github/webhook-config.md
+# 2. Add DISCORD_WEBHOOK_URL to repository secrets
+# 3. Rename this file to remove .example extension
+
+name: Discord Webhook Integration Example
+
+on:
+  # Uncomment these triggers when ready to activate
+  # push:
+  #   branches: [ main, develop ]
+  # pull_request:
+  #   branches: [ main, develop ]
+  
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      test_type:
+        description: 'Type of test to run'
+        required: true
+        default: 'basic'
+        type: choice
+        options:
+        - basic
+        - comprehensive
+        - failure_simulation
+
+env:
+  PYTHON_VERSION: "3.11"
+
+jobs:
+  # Notification job that runs at the start
+  notify-start:
+    name: Notify Workflow Start
+    runs-on: ubuntu-latest
+    if: github.event_name != 'workflow_dispatch' || github.event.inputs.test_type != 'basic'
+    steps:
+      - name: Send workflow start notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"🚀 **Workflow Started**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"CI/CD Pipeline Started",
+                   "description":"Beginning test and build process",
+                   "color":255,
+                   "fields":[
+                     {"name":"Repository","value":"${{ github.repository }}","inline":true},
+                     {"name":"Branch","value":"${{ github.ref_name }}","inline":true},
+                     {"name":"Trigger","value":"${{ github.event_name }}","inline":true},
+                     {"name":"Workflow","value":"${{ github.workflow }}","inline":false}
+                   ],
+                   "footer":{"text":"GitHub Actions"},
+                   "timestamp":"${{ github.event.head_commit.timestamp || github.event.pull_request.created_at }}"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
+
+  # Example test job with webhook notifications
+  test-with-notifications:
+    name: Test with Discord Notifications
+    runs-on: ubuntu-latest
+    needs: notify-start
+    if: always() && (needs.notify-start.result == 'success' || needs.notify-start.result == 'skipped')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run tests (simulate based on input)
+        id: tests
+        run: |
+          echo "Running tests..."
+          
+          # Simulate different test outcomes based on workflow input
+          if [[ "${{ github.event.inputs.test_type }}" == "failure_simulation" ]]; then
+            echo "Simulating test failure for webhook testing"
+            echo "test_status=failed" >> $GITHUB_OUTPUT
+            echo "failure_reason=Simulated test failure for webhook demonstration" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "Tests completed successfully"
+            echo "test_status=success" >> $GITHUB_OUTPUT
+            echo "test_count=42" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send test success notification
+        if: steps.tests.outcome == 'success'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"✅ **Tests Passed**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"Test Suite Completed Successfully",
+                   "description":"All tests passed without errors",
+                   "color":65280,
+                   "fields":[
+                     {"name":"Repository","value":"${{ github.repository }}","inline":true},
+                     {"name":"Branch","value":"${{ github.ref_name }}","inline":true},
+                     {"name":"Tests Passed","value":"${{ steps.tests.outputs.test_count }}","inline":true},
+                     {"name":"Duration","value":"2m 15s","inline":true},
+                     {"name":"Coverage","value":"85%","inline":true},
+                     {"name":"Python Version","value":"${{ env.PYTHON_VERSION }}","inline":true}
+                   ],
+                   "footer":{"text":"GitHub Actions • Test Suite"},
+                   "timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
+
+      - name: Send test failure notification
+        if: steps.tests.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"❌ **Tests Failed**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"Test Suite Failed",
+                   "description":"${{ steps.tests.outputs.failure_reason || 'One or more tests failed' }}",
+                   "color":16711680,
+                   "fields":[
+                     {"name":"Repository","value":"${{ github.repository }}","inline":true},
+                     {"name":"Branch","value":"${{ github.ref_name }}","inline":true},
+                     {"name":"Failed Job","value":"test-with-notifications","inline":true},
+                     {"name":"Workflow Run","value":"[View Details](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})","inline":false}
+                   ],
+                   "footer":{"text":"GitHub Actions • Test Suite"},
+                   "timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
+
+  # Example security scan job with notifications
+  security-scan-with-notifications:
+    name: Security Scan with Notifications
+    runs-on: ubuntu-latest
+    needs: test-with-notifications
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run security scan (simulated)
+        id: security
+        run: |
+          echo "Running security scan..."
+          
+          # Simulate security scan results
+          if [[ "${{ github.event.inputs.test_type }}" == "comprehensive" ]]; then
+            echo "Found 1 medium severity issue for demonstration"
+            echo "security_status=warning" >> $GITHUB_OUTPUT
+            echo "issues_found=1" >> $GITHUB_OUTPUT
+            echo "severity=medium" >> $GITHUB_OUTPUT
+          else
+            echo "No security issues found"
+            echo "security_status=clean" >> $GITHUB_OUTPUT
+            echo "issues_found=0" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send security alert notification
+        if: steps.security.outputs.security_status == 'warning'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"🔒 **Security Alert**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"Security Scan Found Issues",
+                   "description":"Security scan detected potential vulnerabilities",
+                   "color":16753920,
+                   "fields":[
+                     {"name":"Repository","value":"${{ github.repository }}","inline":true},
+                     {"name":"Branch","value":"${{ github.ref_name }}","inline":true},
+                     {"name":"Issues Found","value":"${{ steps.security.outputs.issues_found }}","inline":true},
+                     {"name":"Severity","value":"${{ steps.security.outputs.severity }}","inline":true},
+                     {"name":"Scanner","value":"Bandit","inline":true},
+                     {"name":"Action Required","value":"Review and address security findings","inline":false},
+                     {"name":"Details","value":"[View Security Tab](${{ github.server_url }}/${{ github.repository }}/security)","inline":false}
+                   ],
+                   "footer":{"text":"GitHub Security • Code Scanning"},
+                   "timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
+
+      - name: Send security clean notification
+        if: steps.security.outputs.security_status == 'clean'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"🛡️ **Security Scan Clean**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"Security Scan Completed",
+                   "description":"No security issues detected",
+                   "color":65280,
+                   "fields":[
+                     {"name":"Repository","value":"${{ github.repository }}","inline":true},
+                     {"name":"Branch","value":"${{ github.ref_name }}","inline":true},
+                     {"name":"Issues Found","value":"0","inline":true}
+                   ],
+                   "footer":{"text":"GitHub Security • Code Scanning"},
+                   "timestamp":"'"$(date -u +%Y-%m-%dT%H:%M:%SZ)"'"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
+
+  # Final notification job that always runs
+  notify-completion:
+    name: Notify Workflow Completion
+    runs-on: ubuntu-latest
+    needs: [test-with-notifications, security-scan-with-notifications]
+    if: always()
+    steps:
+      - name: Determine overall workflow status
+        id: status
+        run: |
+          if [[ "${{ needs.test-with-notifications.result }}" == "success" && "${{ needs.security-scan-with-notifications.result }}" == "success" ]]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=65280" >> $GITHUB_OUTPUT  # Green
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+            echo "title=Workflow Completed Successfully" >> $GITHUB_OUTPUT
+            echo "description=All jobs completed without errors" >> $GITHUB_OUTPUT
+          elif [[ "${{ needs.test-with-notifications.result }}" == "failure" || "${{ needs.security-scan-with-notifications.result }}" == "failure" ]]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=16711680" >> $GITHUB_OUTPUT  # Red
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+            echo "title=Workflow Failed" >> $GITHUB_OUTPUT
+            echo "description=One or more jobs failed to complete" >> $GITHUB_OUTPUT
+          else
+            echo "status=partial" >> $GITHUB_OUTPUT
+            echo "color=16753920" >> $GITHUB_OUTPUT  # Orange
+            echo "emoji=⚠️" >> $GITHUB_OUTPUT
+            echo "title=Workflow Completed with Warnings" >> $GITHUB_OUTPUT
+            echo "description=Some jobs completed with warnings" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send workflow completion notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          # Calculate workflow duration (approximate)
+          start_time="${{ github.event.head_commit.timestamp || github.event.pull_request.created_at || github.event.repository.pushed_at }}"
+          current_time=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"${{ steps.status.outputs.emoji }} **Workflow Complete**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"${{ steps.status.outputs.title }}",
+                   "description":"${{ steps.status.outputs.description }}",
+                   "color":${{ steps.status.outputs.color }},
+                   "fields":[
+                     {"name":"Repository","value":"${{ github.repository }}","inline":true},
+                     {"name":"Branch","value":"${{ github.ref_name }}","inline":true},
+                     {"name":"Workflow","value":"${{ github.workflow }}","inline":true},
+                     {"name":"Test Job","value":"${{ needs.test-with-notifications.result }}","inline":true},
+                     {"name":"Security Job","value":"${{ needs.security-scan-with-notifications.result }}","inline":true},
+                     {"name":"Trigger","value":"${{ github.event_name }}","inline":true},
+                     {"name":"Run Number","value":"#${{ github.run_number }}","inline":true},
+                     {"name":"Details","value":"[View Workflow](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})","inline":false}
+                   ],
+                   "footer":{"text":"GitHub Actions • Workflow Summary"},
+                   "timestamp":"'"$current_time"'"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
+
+# Additional example job for PR-specific notifications
+  pr-notifications:
+    name: Pull Request Notifications
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - name: Send PR notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          if [[ -z "$DISCORD_WEBHOOK_URL" ]]; then
+            echo "⚠️ DISCORD_WEBHOOK_URL secret not configured - skipping notification"
+            exit 0
+          fi
+          
+          # Different messages based on PR action
+          case "${{ github.event.action }}" in
+            opened)
+              EMOJI="🔄"
+              TITLE="Pull Request Opened"
+              DESCRIPTION="New pull request ready for review"
+              COLOR=255
+              ;;
+            synchronize)
+              EMOJI="🔄"
+              TITLE="Pull Request Updated"
+              DESCRIPTION="New commits pushed to pull request"
+              COLOR=255
+              ;;
+            closed)
+              if [[ "${{ github.event.pull_request.merged }}" == "true" ]]; then
+                EMOJI="🎉"
+                TITLE="Pull Request Merged"
+                DESCRIPTION="Pull request successfully merged"
+                COLOR=65280
+              else
+                EMOJI="❌"
+                TITLE="Pull Request Closed"
+                DESCRIPTION="Pull request closed without merging"
+                COLOR=16711680
+              fi
+              ;;
+            *)
+              EMOJI="📝"
+              TITLE="Pull Request ${{ github.event.action }}"
+              DESCRIPTION="Pull request action: ${{ github.event.action }}"
+              COLOR=255
+              ;;
+          esac
+          
+          curl -H "Content-Type: application/json" \
+               -d '{
+                 "content":"'"$EMOJI"' **PR Activity**",
+                 "username":"music21-mcp-server",
+                 "embeds":[{
+                   "title":"'"$TITLE"'",
+                   "description":"'"$DESCRIPTION"'",
+                   "color":'$COLOR',
+                   "fields":[
+                     {"name":"PR Title","value":"${{ github.event.pull_request.title }}","inline":false},
+                     {"name":"Author","value":"${{ github.event.pull_request.user.login }}","inline":true},
+                     {"name":"Base Branch","value":"${{ github.event.pull_request.base.ref }}","inline":true},
+                     {"name":"Head Branch","value":"${{ github.event.pull_request.head.ref }}","inline":true},
+                     {"name":"Files Changed","value":"${{ github.event.pull_request.changed_files }} files","inline":true},
+                     {"name":"Additions","value":"+${{ github.event.pull_request.additions }}","inline":true},
+                     {"name":"Deletions","value":"-${{ github.event.pull_request.deletions }}","inline":true},
+                     {"name":"PR Link","value":"[View Pull Request](${{ github.event.pull_request.html_url }})","inline":false}
+                   ],
+                   "footer":{"text":"GitHub Pull Request"},
+                   "timestamp":"${{ github.event.pull_request.updated_at }}"
+                 }]
+               }' \
+               "$DISCORD_WEBHOOK_URL"
