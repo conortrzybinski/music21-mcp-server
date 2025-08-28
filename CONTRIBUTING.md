@@ -1,46 +1,40 @@
 # Contributing to Music21 MCP Server
 
-Thank you for your interest in contributing to the Music21 MCP Server! This document provides guidelines for contributing to this production-ready Model Context Protocol server.
+We love your input! We want to make contributing to Music21 MCP Server as easy and transparent as possible, whether it's:
 
-## 🎯 **How to Contribute**
+- Reporting a bug
+- Discussing the current state of the code
+- Submitting a fix
+- Proposing new features
+- Becoming a maintainer
 
-We welcome contributions in the following areas:
+## Development Process
 
-### **Code Contributions**
-- 🐛 **Bug fixes** - Help us improve reliability
-- ✨ **New features** - Expand music analysis capabilities  
-- ⚡ **Performance improvements** - Optimize algorithms and processing
-- 🧪 **Test coverage** - Add tests for existing functionality
-- 📚 **Documentation** - Improve guides and API documentation
+We use GitHub to host code, to track issues and feature requests, as well as accept pull requests.
 
-### **Music Theory Contributions**
-- 🎼 **New analysis algorithms** - Implement additional music theory concepts
-- 🎵 **Style imitation models** - Add support for new musical styles
-- 🎹 **Counterpoint rules** - Enhance species counterpoint generation
-- 🎸 **Instrument support** - Extend capabilities for specific instruments
+### Branch Protection
 
-### **Infrastructure Improvements**
-- 🔧 **CI/CD enhancements** - Improve automated testing and deployment
-- 🐳 **Docker optimizations** - Better containerization and orchestration
-- 📊 **Monitoring tools** - Add metrics and observability features
-- 🔐 **Security hardening** - Enhance authentication and authorization
+Our `main` branch is protected with the following rules:
+- ✅ Pull request reviews required (minimum 1 approval)
+- ✅ Status checks must pass before merging
+- ✅ Branches must be up to date before merging
+- ✅ Administrators included in restrictions
+- ❌ Force pushes disabled
+- ❌ Branch deletion disabled
 
----
+## Development Setup
 
-## 🚀 **Getting Started**
+### Prerequisites
 
-### **Prerequisites**
 - Python 3.10 or higher
-- Git for version control
-- Basic knowledge of music theory (helpful but not required)
-- Familiarity with MCP (Model Context Protocol)
+- Git
+- GitHub CLI (optional but recommended)
 
-### **Development Setup**
+### Initial Setup
 
-1. **Fork and Clone**
+1. **Fork the Repository**
    ```bash
-   git clone https://github.com/yourusername/music21-mcp-server.git
-   cd music21-mcp-server
+   gh repo fork brightlikethelight/music21-mcp-server --clone
    ```
 
 2. **Create Virtual Environment**
@@ -52,6 +46,8 @@ We welcome contributions in the following areas:
 3. **Install Dependencies**
    ```bash
    pip install -e ".[dev]"
+   # or using uv
+   uv pip install -e ".[dev]"
    ```
 
 4. **Install Pre-commit Hooks**
@@ -59,226 +55,248 @@ We welcome contributions in the following areas:
    pre-commit install
    ```
 
-5. **Run Tests**
-   ```bash
-   pytest tests/ -v
-   ```
+## Code Style Guidelines
 
-6. **Start Development Server**
-   ```bash
-   python -m music21_mcp.server --dev
-   ```
+We use automated tools to ensure consistent code style:
 
----
+### Formatting
+- **Tool**: Ruff formatter
+- **Command**: `uv run ruff format .`
+- **Auto-fix**: `uv run ruff check --fix`
 
-## 📋 **Development Guidelines**
+### Linting
+- **Tool**: Ruff linter
+- **Command**: `uv run ruff check .`
+- **Configuration**: See `pyproject.toml`
 
-### **Code Style**
-- **Formatting**: Use `black` for code formatting
-- **Imports**: Organize with `isort`
-- **Linting**: Follow `flake8` and `pylint` recommendations
-- **Type Hints**: Add type annotations for all functions
-- **Docstrings**: Use Google-style docstrings
+### Type Checking
+- **Tool**: MyPy
+- **Command**: `uv run mypy .`
+- **Strict mode**: Enabled for new code
 
-### **Testing Standards**
-- **Coverage**: Maintain >95% test coverage
-- **Unit Tests**: Test individual functions and classes
-- **Integration Tests**: Test MCP protocol interactions
-- **Performance Tests**: Benchmark music analysis operations
-- **Music Theory Tests**: Validate algorithmic correctness
+### Import Sorting
+- Use grouped imports
+- Order: standard library, third-party, local
+- Example:
+  ```python
+  # Standard library
+  import os
+  from pathlib import Path
+  
+  # Third-party
+  import music21
+  from fastmcp import FastMCP
+  
+  # Local
+  from music21_mcp.tools import ImportScoreTool
+  ```
 
-### **Git Workflow**
-1. **Create Feature Branch**
-   ```bash
-   git checkout -b feature/your-feature-name
-   ```
+## Testing Requirements
 
-2. **Make Changes**
-   - Write code with appropriate tests
-   - Follow code style guidelines
-   - Update documentation as needed
+### Coverage Requirements
+- **Minimum Coverage**: 76%
+- **Target Coverage**: >80%
+- **Current Coverage**: 79.74%
 
-3. **Commit Changes**
-   ```bash
-   git add .
-   git commit -m "feat: add new harmony analysis algorithm"
-   ```
+### Running Tests
 
-4. **Push and Create PR**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-### **Commit Message Convention**
-Use [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-feat: add new counterpoint generation algorithm
-fix: resolve memory leak in score caching
-docs: update API documentation for key analysis
-test: add integration tests for harmony tools
-perf: optimize chord progression analysis
-refactor: improve error handling in auth module
-```
-
----
-
-## 🎼 **Music Theory Guidelines**
-
-### **Algorithm Implementation**
-- **Accuracy**: Ensure theoretical correctness
-- **Performance**: Optimize for real-time processing
-- **Flexibility**: Support various musical styles and periods
-- **Documentation**: Explain theoretical basis and limitations
-
-### **Testing Music Algorithms**
-- **Known Examples**: Test against textbook examples
-- **Edge Cases**: Handle unusual harmonic progressions
-- **Style Variations**: Test across different musical periods
-- **Performance**: Benchmark against large scores
-
-### **Adding New Analysis Tools**
-1. **Research**: Study relevant music theory literature
-2. **Design**: Plan algorithm approach and API
-3. **Implement**: Code with thorough error handling
-4. **Test**: Validate with musical examples
-5. **Document**: Explain usage and limitations
-
----
-
-## 🧪 **Testing Your Changes**
-
-### **Local Testing**
 ```bash
 # Run all tests
-pytest tests/ -v --cov=music21_mcp
+pytest tests/
 
-# Run specific test category
-pytest tests/test_harmony.py -v
-pytest tests/test_counterpoint.py -v
-pytest tests/test_mcp_integration.py -v
+# Run with coverage
+pytest tests/ --cov=src/music21_mcp --cov-report=term-missing
 
-# Test with real MCP client
-python scripts/test_mcp_client.py
+# Run with coverage threshold (will fail if below 76%)
+pytest tests/ --cov=src/music21_mcp --cov-fail-under=76
+
+# Run specific test file
+pytest tests/unit/test_tools.py
+
+# Run with verbose output
+pytest tests/ -v
 ```
 
-### **Music Theory Validation**
+### Writing Tests
+
+1. **Test Location**: Place tests in `tests/unit/` or `tests/integration/`
+2. **Naming**: Use descriptive names like `test_import_musicxml_success()`
+3. **Fixtures**: Use pytest fixtures for common setup
+4. **Mocking**: Mock external dependencies appropriately
+5. **Coverage**: Ensure new features have tests
+
+Example test:
+```python
+import pytest
+from music21_mcp.tools import ImportScoreTool
+
+@pytest.fixture
+def import_tool():
+    """Create ImportScoreTool instance for testing"""
+    return ImportScoreTool()
+
+@pytest.mark.asyncio
+async def test_import_musicxml_success(import_tool, tmp_path):
+    """Test successful MusicXML import"""
+    # Create test file
+    test_file = tmp_path / "test.xml"
+    test_file.write_text("<score>...</score>")
+    
+    # Execute import
+    result = await import_tool.execute(file_path=str(test_file))
+    
+    # Assertions
+    assert result["status"] == "success"
+    assert "score_id" in result
+```
+
+## Pull Request Process
+
+### 1. Create Feature Branch
 ```bash
-# Test harmony analysis
-python -m music21_mcp.tools.harmony_analysis_tool examples/bach_chorale.xml
-
-# Test counterpoint generation
-python -m music21_mcp.tools.counterpoint_tool --species 1 --cantus_firmus examples/cf.xml
-
-# Validate against known examples
-python scripts/validate_music_theory.py
+git checkout -b feature/amazing-feature
+# or
+git checkout -b fix/issue-123
 ```
 
-### **Performance Testing**
+### 2. Make Your Changes
+- Write code following style guidelines
+- Add tests for new functionality
+- Update documentation if needed
+
+### 3. Commit Your Changes
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
 ```bash
-# Benchmark analysis operations
-python scripts/benchmark_analysis.py
+# Features
+git commit -m "feat: Add melodic pattern analysis"
 
-# Test with large scores
-python scripts/test_large_scores.py
+# Bug fixes
+git commit -m "fix: Resolve MIDI export encoding issue"
+
+# Documentation
+git commit -m "docs: Update API documentation"
+
+# Style changes
+git commit -m "style: Format code with ruff"
+
+# Refactoring
+git commit -m "refactor: Simplify harmony analysis logic"
+
+# Tests
+git commit -m "test: Add tests for voice leading"
+
+# Chores
+git commit -m "chore: Update dependencies"
 ```
 
----
+### 4. Run Pre-commit Checks
+```bash
+# Run linting
+uv run ruff check .
 
-## 📚 **Documentation Standards**
+# Run formatting
+uv run ruff format .
 
-### **Code Documentation**
-- **Function Docstrings**: Describe parameters, returns, and music theory context
-- **Class Documentation**: Explain purpose and usage patterns
-- **Module Documentation**: Overview of functionality and examples
+# Run type checking
+uv run mypy .
 
-### **API Documentation**
-- **MCP Tools**: Document all available tools and parameters
-- **Examples**: Provide musical examples and expected outputs
-- **Theory Background**: Explain relevant music theory concepts
+# Run tests with coverage
+pytest tests/ --cov=src/music21_mcp --cov-fail-under=76
+```
 
-### **User Guides**
-- **Getting Started**: Installation and basic usage
-- **Music Theory Guide**: Explanation of implemented algorithms
-- **Advanced Usage**: Complex workflows and customization
+### 5. Push Your Branch
+```bash
+git push origin feature/amazing-feature
+```
 
----
+### 6. Create Pull Request
+```bash
+gh pr create --title "feat: Add amazing feature" --body "Description of changes"
+```
 
-## 🚨 **Issue Reporting**
+Or create via GitHub UI with:
+- Clear title following conventional commit format
+- Detailed description of changes
+- Link to related issues
+- Screenshots/examples if applicable
 
-### **Bug Reports**
-Please include:
-- **Environment**: Python version, OS, music21 version
-- **Musical Input**: Score or example that triggers the bug
-- **Expected Behavior**: What should happen theoretically
-- **Actual Behavior**: What actually happens
-- **Error Messages**: Full stack traces
-- **Reproduction Steps**: Minimal example to reproduce
+## Required CI/CD Checks
 
-### **Feature Requests**
-Please provide:
-- **Music Theory Justification**: Why is this feature important?
-- **Use Cases**: How would this be used in practice?
-- **Proposed API**: How should the feature be exposed?
-- **Implementation Ideas**: Suggestions for approach
-- **References**: Academic sources or standards
+Your PR must pass all automated checks:
 
----
+1. **Lint and Type Check**
+   - Ruff linting passes
+   - Ruff formatting check passes
+   - MyPy type checking passes
 
-## 📖 **Resources**
+2. **Tests**
+   - All unit tests pass
+   - All integration tests pass
+   - Coverage remains above 76%
 
-### **Music Theory References**
-- [Tonal Harmony](https://www.amazon.com/Tonal-Harmony-Stefan-Kostka/dp/0078025141) by Kostka & Payne
-- [Species Counterpoint](https://www.amazon.com/Species-Counterpoint-Peter-Schubert/dp/0195162803) by Peter Schubert
-- [The Jazz Theory Book](https://www.amazon.com/Jazz-Theory-Book-Mark-Levine/dp/1883217040) by Mark Levine
+3. **Security Scan**
+   - Bandit security scan passes
+   - pip-audit vulnerability check passes
 
-### **Technical References**
-- [music21 Documentation](https://web.mit.edu/music21/)
-- [Model Context Protocol Specification](https://modelcontextprotocol.io/)
-- [FastMCP Documentation](https://fastmcp.readthedocs.io/)
+4. **Documentation**
+   - Documentation builds successfully
 
-### **Development Tools**
-- [Python Type Checking](https://mypy.readthedocs.io/)
-- [Testing with pytest](https://docs.pytest.org/)
-- [Code Formatting with black](https://black.readthedocs.io/)
+## Code Review Guidelines
 
----
+### For Contributors
+- Respond to review feedback promptly
+- Push new commits (don't force push)
+- Mark conversations as resolved when addressed
+- Request re-review when ready
 
-## 🏆 **Recognition**
+### For Reviewers
+- Review promptly (within 48 hours if possible)
+- Provide constructive feedback
+- Approve when satisfied
+- Use "Request changes" sparingly
 
-Contributors will be:
-- **Listed in CONTRIBUTORS.md** with their contributions
-- **Mentioned in release notes** for significant features
-- **Credited in academic papers** if applicable
-- **Invited to maintainer role** for sustained contributions
+## Reporting Issues
 
----
+### Bug Reports
+Use the bug report template and include:
+- Clear description of the issue
+- Steps to reproduce
+- Expected vs actual behavior
+- Environment details (OS, Python version)
+- Error messages/stack traces
 
-## 📞 **Getting Help**
+### Feature Requests
+Use the feature request template and include:
+- Problem you're trying to solve
+- Proposed solution
+- Alternative solutions considered
+- Additional context
 
-- **Discussions**: Use GitHub Discussions for questions
-- **Issues**: Create GitHub Issues for bugs and features
-- **Email**: Contact [brightliu@college.harvard.edu](mailto:brightliu@college.harvard.edu) for urgent matters
-- **Music Theory Questions**: Feel free to ask about theoretical aspects
+## Discord Notifications
 
----
+To get real-time updates on CI/CD pipeline status:
 
-## 📜 **Code of Conduct**
+1. See [Webhook Setup Guide](.github/webhook-config.md)
+2. Run setup script: `./scripts/setup-webhook.sh`
+3. Test webhook: `./scripts/test-webhook.sh`
 
-We are committed to providing a welcoming and inclusive environment for all contributors. Please:
+## License
 
-- **Be respectful** of different viewpoints and experiences
-- **Use welcoming language** and be patient with newcomers
-- **Focus on collaboration** and constructive feedback
-- **Respect music theory traditions** while encouraging innovation
-- **Give credit** where credit is due
+By contributing, you agree that your contributions will be licensed under the MIT License.
 
----
+## Questions?
 
-## 🎉 **Thank You!**
+Feel free to:
+- Open an issue for questions
+- Contact the maintainer: brightliu@college.harvard.edu
+- Check existing issues and pull requests
 
-Your contributions help make music theory more accessible through AI tooling. Whether you're fixing a small bug, adding a major feature, or improving documentation, every contribution matters!
+## Recognition
 
-For questions or suggestions about this contributing guide, please open an issue or discussion.
+Contributors will be recognized in:
+- [AUTHORS](AUTHORS.md) file
+- Release notes
+- Project documentation
 
-**Happy coding and music making!** 🎵✨
+Thank you for contributing to Music21 MCP Server! 🎵

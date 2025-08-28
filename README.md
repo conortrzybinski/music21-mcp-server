@@ -1,5 +1,7 @@
 # Music21 Analysis - Multi-Interface Music Server
 
+[![CI/CD Pipeline](https://github.com/brightlikethelight/music21-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions/workflows/ci.yml)
+[![Coverage](https://img.shields.io/badge/coverage-79.74%25-brightgreen.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -212,6 +214,12 @@ Unified Entry Point:
 - **[examples/](examples/)** - Working code examples
 - **API Docs**: http://localhost:8000/docs (when HTTP server running)
 
+### Discord Webhook Integration
+- **[.github/webhook-config.md](.github/webhook-config.md)** - Complete Discord webhook setup guide
+- **[docs/webhook-integration.md](docs/webhook-integration.md)** - Advanced webhook configuration
+- **[scripts/test-webhook.sh](scripts/test-webhook.sh)** - Test webhook connectivity
+- **[scripts/setup-webhook.sh](scripts/setup-webhook.sh)** - Automated webhook setup
+
 ## 🔧 Configuration
 
 ### Environment Variables
@@ -279,12 +287,30 @@ The previous enterprise version has been **simplified for reliability**:
 - ❌ **Removed**: Docker, K8s, complex auth, monitoring (too unstable for MCP ecosystem)
 - 🔄 **Changed**: Focus on core value delivery through multiple interfaces
 
+## 🔔 Discord Webhook Integration
+
+Get real-time notifications for CI/CD pipeline status, pull requests, and releases:
+
+- 📖 [Webhook Setup Guide](.github/webhook-config.md)
+- 🛠️ [Quick Setup Script](scripts/setup-webhook.sh)
+- 🧪 [Test Your Webhook](scripts/test-webhook.sh)
+- 📚 [Advanced Configuration](docs/webhook-integration.md)
+
 ## 🤝 Contributing
 
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details on:
+
+- Development setup and requirements
+- Code style guidelines (Ruff, MyPy)
+- Testing requirements (maintain >76% coverage)
+- Pull request process
+- Branch protection rules
+
+Quick start:
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Run tests: `python tests/run_reality_tests.py`
-4. Commit changes: `git commit -m 'Add amazing feature'`
+3. Run tests: `pytest tests/ --cov=src/music21_mcp --cov-fail-under=76`
+4. Commit changes: `git commit -m 'feat: Add amazing feature'`
 5. Push branch: `git push origin feature/amazing-feature`
 6. Submit pull request
 
