@@ -25,7 +25,7 @@ class ErrorResponse:
 
     def to_dict(self) -> dict[str, Any]:
         """Convert to dictionary for JSON serialization."""
-        result = {
+        result: dict[str, Any] = {
             "error": self.error,
             "error_code": self.error_code,
             "message": self.message,
