@@ -56,7 +56,7 @@ def validate_extracted_files(extract_dir: Path):
     return True
 
 
-def test_manifest_parsing(extract_dir: Path):
+def verify_manifest_parsing(extract_dir: Path):
     """Test that the manifest.json is valid"""
     manifest_path = extract_dir / "manifest.json"
     try:
@@ -88,7 +88,7 @@ def test_manifest_parsing(extract_dir: Path):
         return False
 
 
-def test_pre_install_script(extract_dir: Path):
+def verify_pre_install_script(extract_dir: Path):
     """Test the pre-installation script (dry run)"""
     try:
         pre_install = extract_dir / "scripts" / "pre_install.py"
@@ -110,7 +110,7 @@ def test_pre_install_script(extract_dir: Path):
         return False
 
 
-def test_post_install_script(extract_dir: Path):
+def verify_post_install_script(extract_dir: Path):
     """Test the post-installation script (dry run)"""
     try:
         post_install = extract_dir / "scripts" / "post_install.py"
@@ -132,7 +132,7 @@ def test_post_install_script(extract_dir: Path):
         return False
 
 
-def test_server_import(extract_dir: Path):
+def verify_server_import(extract_dir: Path):
     """Test that the server can be imported"""
     try:
         # Add the src directory to Python path
@@ -169,7 +169,7 @@ def test_server_import(extract_dir: Path):
             sys.path.remove(str(src_dir))
 
 
-def test_requirements_file(extract_dir: Path):
+def verify_requirements_file(extract_dir: Path):
     """Test that the requirements.txt file is valid"""
     try:
         requirements_file = extract_dir / "requirements.txt"
@@ -232,11 +232,11 @@ def main():
         tests = [
             ("Extract DXT package", lambda: extract_dxt_package(dxt_file, temp_dir)),
             ("Validate extracted files", lambda: validate_extracted_files(temp_dir)),
-            ("Test manifest parsing", lambda: test_manifest_parsing(temp_dir)),
-            ("Test requirements file", lambda: test_requirements_file(temp_dir)),
-            ("Test pre-install script", lambda: test_pre_install_script(temp_dir)),
-            ("Test post-install script", lambda: test_post_install_script(temp_dir)),
-            ("Test server import", lambda: test_server_import(temp_dir)),
+            ("Test manifest parsing", lambda: verify_manifest_parsing(temp_dir)),
+            ("Test requirements file", lambda: verify_requirements_file(temp_dir)),
+            ("Test pre-install script", lambda: verify_pre_install_script(temp_dir)),
+            ("Test post-install script", lambda: verify_post_install_script(temp_dir)),
+            ("Test server import", lambda: verify_server_import(temp_dir)),
         ]
 
         passed = 0
