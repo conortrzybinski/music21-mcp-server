@@ -15,6 +15,8 @@ import sys
 import time
 from pathlib import Path
 
+import pytest
+
 # Add src to path for importing
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
@@ -22,6 +24,7 @@ from music21_mcp.resource_manager import ResourceExhaustedError
 from music21_mcp.services import MusicAnalysisService
 
 
+@pytest.mark.asyncio
 async def test_resource_management():
     """Comprehensive test of resource management system"""
     print("🧪 Testing Resource Management System")
@@ -117,7 +120,7 @@ async def test_resource_management():
         scores = scores_result.get("scores", [])
         print(f"   Remaining scores: {len(scores)}")
         for score in scores:
-            print(f"   - {score['id']}")
+            print(f"   - {score.get('score_id', score.get('id', 'unknown'))}")
 
     print("\n🎉 Resource Management Test Complete!")
     print("=" * 50)
