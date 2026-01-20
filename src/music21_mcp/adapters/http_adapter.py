@@ -18,6 +18,10 @@ from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
+from ..exceptions import (
+    Music21MCPError,
+    exception_to_error_response,
+)
 from ..health_checks import (
     get_health_checker,
     health_check,
@@ -77,8 +81,34 @@ class HTTPAdapter:
             description="REST API for music analysis - MCP-independent",
             version="1.0.0",
         )
+        self._setup_exception_handlers()
         self._setup_middleware()
         self._setup_routes()
+
+    def _setup_exception_handlers(self):
+        """Setup exception handlers for structured error responses"""
+
+        @self.app.exception_handler(Music21MCPError)
+        async def music21_exception_handler(request, exc: Music21MCPError):
+            """Handle Music21MCP exceptions with structured responses"""
+            error_response = exception_to_error_response(exc)
+            return JSONResponse(
+                status_code=error_response.http_status,
+                content=error_response.to_dict(),
+                headers={"X-Error-Code": error_response.error_code},
+            )
+
+        @self.app.exception_handler(Exception)
+        async def generic_exception_handler(request, exc: Exception):
+            """Handle unexpected exceptions with structured responses"""
+            return JSONResponse(
+                status_code=500,
+                content={
+                    "error": "InternalError",
+                    "error_code": "INTERNAL_ERROR",
+                    "message": "An unexpected error occurred",
+                },
+            )
 
     def _setup_middleware(self):
         """Setup middleware for request tracking and monitoring"""

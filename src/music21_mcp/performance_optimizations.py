@@ -19,7 +19,7 @@ from concurrent.futures import ThreadPoolExecutor
 from functools import lru_cache, wraps
 from typing import Any
 
-from cachetools import TTLCache  # type: ignore
+from cachetools import TTLCache
 from music21 import chord, key, roman
 
 logger = logging.getLogger(__name__)
@@ -185,9 +185,13 @@ class PerformanceOptimizer:
 
     def __init__(self, cache_ttl: int = 3600, max_cache_size: int = 1000):
         # TTL caches for expensive operations
-        self.roman_cache = TTLCache(maxsize=max_cache_size, ttl=cache_ttl)
-        self.key_cache = TTLCache(maxsize=100, ttl=cache_ttl)
-        self.chord_analysis_cache = TTLCache(maxsize=500, ttl=cache_ttl)
+        self.roman_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=max_cache_size, ttl=cache_ttl
+        )
+        self.key_cache: TTLCache[str, Any] = TTLCache(maxsize=100, ttl=cache_ttl)
+        self.chord_analysis_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=500, ttl=cache_ttl
+        )
 
         # Thread pool for parallel processing
         self.executor = ThreadPoolExecutor(max_workers=4)
@@ -578,15 +582,17 @@ class PerformanceOptimizer:
         """Get current performance metrics and recommendations"""
         return self.metrics.get_summary()
 
-    def shutdown(self) -> None:
+    def shutdown(self, log_messages: bool = True) -> None:
         """Gracefully shutdown the performance optimizer and its thread pool"""
-        logger.info("Shutting down PerformanceOptimizer")
         try:
+            if log_messages:
+                logger.info("Shutting down PerformanceOptimizer")
             if hasattr(self, "executor") and self.executor:
                 self.executor.shutdown(wait=True)
-                logger.info("ThreadPoolExecutor shutdown completed")
-        except Exception as e:
-            logger.error(f"Error during PerformanceOptimizer shutdown: {e}")
+                if log_messages:
+                    logger.info("ThreadPoolExecutor shutdown completed")
+        except Exception:
+            pass  # Silently ignore errors during shutdown
 
     def analyze_chord_with_cache(self, chord_obj: chord.Chord) -> dict[str, Any]:
         """Analyze chord with caching for performance"""
@@ -648,10 +654,10 @@ class PerformanceOptimizer:
 
     def __del__(self):
         """Ensure proper cleanup when PerformanceOptimizer is destroyed"""
-        import contextlib
-
-        with contextlib.suppress(Exception):
-            self.shutdown()
+        try:  # noqa: SIM105 - Can't use contextlib.suppress during interpreter shutdown
+            self.shutdown(log_messages=False)
+        except Exception:
+            pass
 
 
 class OptimizedChordAnalysisTool:
@@ -772,7 +778,7 @@ class OptimizedHarmonyAnalysisTool:
     def __init__(self, score_manager: dict[str, Any], optimizer: PerformanceOptimizer):
         self.score_manager = score_manager
         self.optimizer = optimizer
-        self.cache = TTLCache(maxsize=100, ttl=3600)
+        self.cache: TTLCache[str, Any] = TTLCache(maxsize=100, ttl=3600)
 
     @cached_analysis(
         "cache",
