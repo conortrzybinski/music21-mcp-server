@@ -342,8 +342,24 @@ exclude_dirs = ["tests", "examples", "debug_test.py"]
 
 [dependency-groups]
 dev = [
+    # Testing
+    "pytest>=7.4.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=4.1.0",
+    "pytest-xdist>=3.5.0",
+    "pytest-benchmark>=4.0.0",
+    "pytest-timeout>=2.2.0",
+    # Linting and formatting
+    "ruff>=0.1.0",
+    "mypy>=1.8.0",
+    # Type stubs
+    "types-redis>=4.6.0",
+    "types-psutil>=5.9.0",
+    "types-cachetools>=5.3.0",
+    # Security scanning
     "bandit[toml]>=1.8.6",
     "pip-audit>=2.9.0",
     "safety>=3.2.9",
+    # Publishing
     "twine>=6.1.0",
 ]
