@@ -14,7 +14,7 @@ from collections.abc import MutableMapping
 from typing import Any
 
 import psutil
-from cachetools import TTLCache  # type: ignore
+from cachetools import TTLCache
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +49,7 @@ class ScoreStorage(MutableMapping[str, Any]):
         self.cleanup_interval = cleanup_interval_seconds
 
         # TTL cache for automatic expiration
-        self._cache = TTLCache(maxsize=max_scores, ttl=score_ttl_seconds)
+        self._cache: TTLCache[str, Any] = TTLCache(maxsize=max_scores, ttl=score_ttl_seconds)
 
         # Metadata tracking
         self._access_times: dict[str, float] = {}
@@ -275,10 +275,12 @@ class ScoreStorage(MutableMapping[str, Any]):
 
     def __del__(self) -> None:
         """Ensure cleanup thread is shutdown when object is destroyed"""
-        import contextlib
-
-        with contextlib.suppress(Exception):
-            self.shutdown()
+        # Avoid imports during interpreter shutdown which can cause ImportError
+        try:
+            if self._shutdown_event and not self._shutdown_event.is_set():
+                self._shutdown_event.set()
+        except Exception:
+            pass
 
 
 class ResourceManager:
@@ -319,10 +321,12 @@ class ResourceManager:
 
     def __del__(self) -> None:
         """Ensure proper cleanup when ResourceManager is destroyed"""
-        import contextlib
-
-        with contextlib.suppress(Exception):
-            self.shutdown()
+        # Avoid imports during interpreter shutdown which can cause ImportError
+        try:
+            if hasattr(self, "scores"):
+                self.scores._shutdown_event.set()
+        except Exception:
+            pass
 
     def get_system_stats(self) -> dict[str, Any]:
         """Get comprehensive system resource statistics"""

@@ -31,8 +31,7 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --dev
-        uv add --dev ruff mypy
-    
+
     - name: Run Ruff linter
       run: |
         uv run ruff check src/ tests/ --output-format=github
@@ -75,7 +74,6 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --dev
-        uv add pytest pytest-cov pytest-asyncio
 
     - name: Configure music21 for CI
       run: |
@@ -150,7 +148,6 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --dev
-        uv add --dev bandit[toml] pip-audit safety
 
     - name: Run bandit security scan
       run: |
@@ -273,7 +270,6 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --dev
-        uv add --dev sphinx sphinx-rtd-theme
 
     - name: Check documentation builds without warnings
       run: |
@@ -305,7 +301,6 @@ jobs:
     - name: Install dependencies
       run: |
         uv sync --dev
-        uv add --dev pytest-benchmark
 
     - name: Run performance benchmarks
       run: |

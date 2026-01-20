@@ -1,7 +1,7 @@
 # Music21 Analysis - Multi-Interface Music Server
 
 [![CI/CD Pipeline](https://github.com/brightlikethelight/music21-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-79.74%25-brightgreen.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions)
+[![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -209,8 +209,8 @@ Unified Entry Point:
 
 ## 📚 Documentation
 
-- **[INTERFACES.md](INTERFACES.md)** - Complete interface guide with examples
-- **[SIMPLIFIED.md](SIMPLIFIED.md)** - Architecture simplification rationale
+- **[docs/architecture.md](docs/architecture.md)** - System architecture overview
+- **[docs/getting-started.md](docs/getting-started.md)** - Quick start guide
 - **[examples/](examples/)** - Working code examples
 - **API Docs**: http://localhost:8000/docs (when HTTP server running)
 
