@@ -36,7 +36,6 @@ jobs:
     
     - name: Check distribution
       run: |
-        uv add --dev twine
         uv run twine check dist/*
     
     - name: Upload artifacts

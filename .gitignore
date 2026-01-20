@@ -180,6 +180,13 @@ PROTOCOL_*.md
 # Test files in root (should be in tests/)
 /test_*.py
 
-# Claude specific (to be removed)
+# CI/CD generated files
+ci_log.txt
+junit/
+bandit-results.json
+pip-audit-results.json
+safety-results.json
+benchmark-results.json
+
+# Claude specific
 claude_desktop_config.json
-.claude/

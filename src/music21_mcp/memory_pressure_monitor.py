@@ -506,10 +506,13 @@ class MemoryPressureMonitor:
 
     def __del__(self):
         """Ensure cleanup on destruction"""
-        import contextlib
-
-        with contextlib.suppress(Exception):
-            self.shutdown()
+        # Avoid imports during interpreter shutdown which can cause ImportError
+        try:
+            if self._monitoring:
+                self._monitoring = False
+                self._shutdown_event.set()
+        except Exception:
+            pass
 
 
 # Global instance

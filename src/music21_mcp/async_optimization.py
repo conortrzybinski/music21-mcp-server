@@ -14,6 +14,7 @@ Key optimizations:
 """
 
 import asyncio
+import atexit
 import hashlib
 import logging
 import time
@@ -26,7 +27,7 @@ from dataclasses import dataclass
 from typing import Any
 from weakref import WeakValueDictionary
 
-from cachetools import TTLCache  # type: ignore
+from cachetools import TTLCache
 from music21 import chord, key, roman, stream
 
 logger = logging.getLogger(__name__)
@@ -68,9 +69,13 @@ class AsyncOptimizer:
         self.roman_analysis_queue: Queue[AnalysisTask] = Queue()
 
         # Caching with advanced features
-        self.roman_cache = TTLCache(maxsize=5000, ttl=cache_ttl)
-        self.chord_pattern_cache = TTLCache(maxsize=1000, ttl=cache_ttl)
-        self.score_metadata_cache = TTLCache(maxsize=500, ttl=cache_ttl)
+        self.roman_cache: TTLCache[str, Any] = TTLCache(maxsize=5000, ttl=cache_ttl)
+        self.chord_pattern_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=1000, ttl=cache_ttl
+        )
+        self.score_metadata_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=500, ttl=cache_ttl
+        )
 
         # Precomputed lookup tables
         self.roman_lookup_table = self._build_roman_lookup_table()
@@ -186,6 +191,9 @@ class AsyncOptimizer:
 
                 # Collect tasks for batching
                 while len(batch) < self.batch_size and time.time() < deadline:
+                    # Check shutdown event frequently
+                    if self.shutdown_event.is_set():
+                        break
                     try:
                         task = await asyncio.wait_for(
                             self.roman_analysis_queue.get(),
@@ -194,15 +202,20 @@ class AsyncOptimizer:
                         batch.append(task)
                     except asyncio.TimeoutError:
                         break
+                    except asyncio.CancelledError:
+                        # Exit immediately on cancellation
+                        return
 
-                if batch:
+                if batch and not self.shutdown_event.is_set():
                     await self._process_batch(batch)
 
             except asyncio.CancelledError:
-                break
+                # Exit cleanly on cancellation
+                return
             except Exception as e:
                 logger.error(f"Batch processor error: {e}")
-                await asyncio.sleep(0.1)  # Brief pause on error
+                if not self.shutdown_event.is_set():
+                    await asyncio.sleep(0.1)  # Brief pause on error
 
     async def _process_batch(self, batch: list[AnalysisTask]):
         """Process a batch of Roman numeral analysis tasks"""
@@ -544,3 +557,33 @@ async def shutdown_async_optimizer():
     if _global_async_optimizer:
         await _global_async_optimizer.stop()
         _global_async_optimizer = None
+
+
+def _sync_shutdown_async_optimizer():
+    """Synchronous shutdown handler for atexit"""
+    global _global_async_optimizer
+    if _global_async_optimizer:
+        try:
+            # Signal shutdown - this tells the batch processor to exit gracefully
+            _global_async_optimizer.shutdown_event.set()
+
+            # Cancel the task only if we can get a running loop
+            if _global_async_optimizer.batch_processor_task:
+                try:
+                    loop = asyncio.get_running_loop()
+                    _global_async_optimizer.batch_processor_task.cancel()
+                except RuntimeError:
+                    # No running loop - task will be cleaned up by Python
+                    pass
+
+            # Shutdown executor without waiting (non-blocking)
+            _global_async_optimizer.executor.shutdown(wait=False)
+        except Exception:
+            # Ignore all errors during shutdown
+            pass
+        finally:
+            _global_async_optimizer = None
+
+
+# Register atexit handler for cleanup
+atexit.register(_sync_shutdown_async_optimizer)
