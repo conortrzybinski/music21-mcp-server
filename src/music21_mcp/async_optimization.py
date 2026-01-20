@@ -70,8 +70,12 @@ class AsyncOptimizer:
 
         # Caching with advanced features
         self.roman_cache: TTLCache[str, Any] = TTLCache(maxsize=5000, ttl=cache_ttl)
-        self.chord_pattern_cache: TTLCache[str, Any] = TTLCache(maxsize=1000, ttl=cache_ttl)
-        self.score_metadata_cache: TTLCache[str, Any] = TTLCache(maxsize=500, ttl=cache_ttl)
+        self.chord_pattern_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=1000, ttl=cache_ttl
+        )
+        self.score_metadata_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=500, ttl=cache_ttl
+        )
 
         # Precomputed lookup tables
         self.roman_lookup_table = self._build_roman_lookup_table()

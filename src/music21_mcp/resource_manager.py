@@ -49,7 +49,9 @@ class ScoreStorage(MutableMapping[str, Any]):
         self.cleanup_interval = cleanup_interval_seconds
 
         # TTL cache for automatic expiration
-        self._cache: TTLCache[str, Any] = TTLCache(maxsize=max_scores, ttl=score_ttl_seconds)
+        self._cache: TTLCache[str, Any] = TTLCache(
+            maxsize=max_scores, ttl=score_ttl_seconds
+        )
 
         # Metadata tracking
         self._access_times: dict[str, float] = {}

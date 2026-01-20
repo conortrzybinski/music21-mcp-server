@@ -30,13 +30,19 @@ class PerformanceCache:
             ttl_seconds: Time-to-live for cached items (default: 1 hour)
         """
         # Roman numeral analysis cache - the biggest bottleneck
-        self._roman_numeral_cache: TTLCache[str, Any] = TTLCache(maxsize=max_size, ttl=ttl_seconds)
+        self._roman_numeral_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=max_size, ttl=ttl_seconds
+        )
 
         # Key analysis cache
-        self._key_analysis_cache: TTLCache[str, Any] = TTLCache(maxsize=max_size // 10, ttl=ttl_seconds)
+        self._key_analysis_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=max_size // 10, ttl=ttl_seconds
+        )
 
         # Chord analysis cache
-        self._chord_analysis_cache: TTLCache[str, Any] = TTLCache(maxsize=max_size, ttl=ttl_seconds)
+        self._chord_analysis_cache: TTLCache[str, Any] = TTLCache(
+            maxsize=max_size, ttl=ttl_seconds
+        )
 
         # Performance metrics
         self._hits = 0
