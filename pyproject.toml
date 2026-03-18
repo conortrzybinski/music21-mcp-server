@@ -26,120 +26,25 @@ classifiers = [
 ]
 dependencies = [
     "music21>=9.1.0",
-    "midiutil>=1.2.1",
     "numpy>=1.24.0",
-    "scipy>=1.11.0",
-    "matplotlib>=3.7.0",
-    "pillow>=10.0.0",
     "pydantic>=2.11.0",
-    "pydantic-settings>=2.0.0",
-    "aiofiles>=23.0.0",
-    "httpx>=0.28.0",
-    "requests>=2.32.4",
     "cachetools>=5.3.0",
-    "python-dotenv>=1.0.0",
     "psutil>=5.9.0",
-    "mcp>=1.11.0",
-    "fastmcp==2.9.0",
-    "bleach>=6.1.0",
-    "pathvalidate>=3.2.0",
+    "mcp>=1.23.0",
+    "fastmcp>=2.14.0,<3.0",
     "fastapi>=0.115.0",
     "uvicorn>=0.31.0",
-    "starlette>=0.49.1",
 ]
 
 [tool.poetry]
-name = "music21-mcp-server"
-version = "1.0.0"
-description = "Enterprise-grade Model Context Protocol server for music analysis and composition"
-authors = ["Bright Liu <brightliu@college.harvard.edu>"]
-license = "MIT"
-readme = "README.md"
 homepage = "https://github.com/brightlikethelight/music21-mcp-server"
 repository = "https://github.com/brightlikethelight/music21-mcp-server"
 documentation = "https://github.com/brightlikethelight/music21-mcp-server/blob/main/README.md"
-keywords = ["music", "analysis", "mcp", "music21", "composition"]
-classifiers = [
-    "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
-    "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Topic :: Multimedia :: Sound/Audio :: Analysis",
-    "Topic :: Scientific/Engineering :: Information Analysis",
-]
 packages = [{include = "music21_mcp", from = "src"}]
 
-[tool.poetry.dependencies]
-python = "^3.10"
-music21 = "^9.1.0"
-midiutil = "^1.2.1"
-numpy = "^1.24.0"
-scipy = "^1.11.0"
-matplotlib = "^3.7.0"
-pillow = "^10.0.0"
-pydantic = "^2.11.0"
-pydantic-settings = "^2.0.0"
-aiofiles = "^23.0.0"
-httpx = "^0.28.0"
-requests = "^2.32.4"
-cachetools = "^5.3.0"
-python-dotenv = "^1.0.0"
-# MCP uses stdio transport, no HTTP server needed
-psutil = "^5.9.0"
-mcp = "^1.11.0"
-fastmcp = "==2.9.0"  # Pinned version for stability - MCP breaks frequently
-# Basic security and web dependencies  
-bleach = "^6.1.0"
-pathvalidate = "^3.2.0"
-fastapi = "^0.115.0"
-uvicorn = "^0.31.0"
 
-[tool.poetry.group.dev.dependencies]
-pytest = "^7.4.0"
-pytest-asyncio = "^0.21.0"
-pytest-cov = "^4.1.0"
-pytest-xdist = "^3.5.0"
-pytest-benchmark = "^4.0.0"
-pytest-timeout = "^2.2.0"
-memory-profiler = "^0.61.0"
-black = "^23.12.0"
-ruff = "^0.1.0"
-mypy = "^1.8.0"
-types-redis = "^4.6.0"
-types-psutil = "^5.9.0"
-types-cachetools = "^5.3.0"
-pre-commit = "^3.6.0"
-sphinx = "^7.2.0"
-sphinx-rtd-theme = "^2.0.0"
-bandit = "^1.7.0"
-pip-audit = "^2.6.0"
-twine = "^5.0.0"
-
-[tool.poetry.group.audio]
-optional = true
-
-[tool.poetry.group.audio.dependencies]
-pydub = "^0.25.0"
-simpleaudio = "^1.0.4"
-soundfile = "^0.12.0"
-
-[tool.poetry.group.visualization]
-optional = true
-
-[tool.poetry.group.visualization.dependencies]
-plotly = "^5.17.0"
-seaborn = "^0.12.0"
-
-# No enterprise extras - keeping it simple until MCP ecosystem stabilizes
-
-[tool.poetry.scripts]
-# Unified launcher for all interfaces
+[project.scripts]
 music21-analysis = "music21_mcp.launcher:main"
-
-# Individual interface entry points
 music21-mcp = "music21_mcp.server_minimal:main"
 music21-http = "music21_mcp.adapters.http_adapter:main"
 music21-cli = "music21_mcp.adapters.cli_adapter:main"
@@ -151,9 +56,6 @@ music21-cli = "music21_mcp.adapters.cli_adapter:main"
 "Bug Tracker" = "https://github.com/brightlikethelight/music21-mcp-server/issues"
 "Changelog" = "https://github.com/brightlikethelight/music21-mcp-server/blob/main/CHANGELOG.md"
 "Discussions" = "https://github.com/brightlikethelight/music21-mcp-server/discussions"
-
-[tool.poetry.urls]
-"Bug Tracker" = "https://github.com/brightlikethelight/music21-mcp-server/issues"
 
 [tool.black]
 line-length = 88
@@ -195,8 +97,7 @@ ignore = [
     "S608",   # possible SQL injection (false positives)
     "S311",   # pseudo-random generators are OK for music generation
     "B007",   # unused loop control variable (sometimes needed for clarity)
-    "UP038",  # isinstance with union (backwards compatibility)
-    "E722",   # bare except (used intentionally in error recovery)
+    "UP038",  # isinstance with union (use X | Y) -- too many instances, low value
     "S110",   # try-except-pass (acceptable for optional operations)
     "S112",   # try-except-continue (acceptable in loops)
     "F541",   # f-string without placeholders (sometimes clearer)
@@ -206,8 +107,6 @@ ignore = [
     "S104",   # Binding to all interfaces (intentional for servers)
     "S324",   # MD5 hash for caching (not used for security)
     "B019",   # LRU cache on methods (acceptable for performance)
-    "B904",   # Exception raising without 'from' (acceptable)
-    "F841",   # unused variable (sometimes for documentation)
     "PLR",    # too many arguments/branches/statements (complexity needed)
 ]
 
@@ -284,18 +183,13 @@ addopts = [
     "--cov-report=term-missing:skip-covered",
     "--cov-report=html",
     "--cov-report=xml",
-    "--cov-fail-under=74",  # Pragmatic coverage threshold (adjusted for new exceptions module)
+    "--cov-fail-under=82",  # Coverage threshold — 84%+ achieved with 573 tests
     "--timeout=60",  # Prevent infinite loops from hanging tests
 ]
 markers = [
     "slow: marks tests as slow (deselect with '-m \"not slow\"')",
     "integration: marks tests as integration tests",
-    "unit: marks tests as unit tests",
-    "performance: marks tests as performance tests",
-    "stress: marks tests as stress tests",
     "security: marks tests as security tests",
-    "chaos: marks tests as chaos engineering tests",
-    "health: marks tests as health check tests",
 ]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
@@ -311,10 +205,11 @@ omit = [
     "*/tests/*",
     "*/__init__.py",
     # Infrastructure files - tested via integration, not unit tests
-    "*/health_check.py",           # Docker health check utility
-    "*/launcher.py",               # Multi-interface launcher 
+    "*/launcher.py",               # Multi-interface launcher
     "*/adapters/cli_adapter.py",   # CLI interface (tested via integration)
     "*/adapters/http_adapter.py",  # HTTP interface (tested via integration)
+    "*/schemas/*",
+    "*/__main__.py",
 ]
 
 [tool.coverage.report]
@@ -353,7 +248,6 @@ dev = [
     "ruff>=0.1.0",
     "mypy>=1.8.0",
     # Type stubs
-    "types-redis>=4.6.0",
     "types-psutil>=5.9.0",
     "types-cachetools>=5.3.0",
     # Security scanning

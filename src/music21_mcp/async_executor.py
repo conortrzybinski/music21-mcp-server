@@ -12,7 +12,7 @@ import os
 import time
 from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 logger = logging.getLogger(__name__)
 
@@ -31,8 +31,8 @@ class Music21AsyncExecutor:
     music21 operations like parsing, analysis, and generation.
     """
 
-    _instance: Optional["Music21AsyncExecutor"] = None
-    _lock = asyncio.Lock()
+    _instance: "Music21AsyncExecutor | None" = None
+    _lock: asyncio.Lock | None = None
 
     def __init__(self, max_workers: int = 4):
         """
@@ -52,6 +52,8 @@ class Music21AsyncExecutor:
     @classmethod
     async def get_instance(cls, max_workers: int = 4) -> "Music21AsyncExecutor":
         """Get or create the singleton executor instance"""
+        if cls._lock is None:
+            cls._lock = asyncio.Lock()
         if cls._instance is None:
             async with cls._lock:
                 if cls._instance is None:
@@ -77,7 +79,7 @@ class Music21AsyncExecutor:
             asyncio.TimeoutError: If operation exceeds timeout
             Any exception raised by the function
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         start_time = time.time()
         operation_timeout = timeout or DEFAULT_TIMEOUT_SECONDS
 
@@ -109,7 +111,7 @@ class Music21AsyncExecutor:
             self._total_time += duration
             error_msg = f"Music21 operation {func.__name__} timed out after {operation_timeout}s"
             logger.error(error_msg)
-            raise asyncio.TimeoutError(error_msg)
+            raise asyncio.TimeoutError(error_msg) from None
         except Exception as e:
             duration = time.time() - start_time
             self._total_operations += 1

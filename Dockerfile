@@ -28,11 +28,9 @@ FROM python:3.11-slim
 
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
-    # For music21 functionality
     lilypond \
-    musescore3 \
-    # For health checks
     curl \
+    && (apt-get install -y musescore || true) \
     && rm -rf /var/lib/apt/lists/*
 
 # Create non-root user for security
@@ -57,15 +55,11 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     MUSIC21_MCP_HOST=0.0.0.0 \
     MUSIC21_MCP_PORT=8000 \
-    MUSIC21_MAX_MEMORY_MB=512 \
-    MUSIC21_GC_THRESHOLD_MB=100 \
-    MUSIC21_MCP_TIMEOUT=30 \
-    MUSIC21_LOG_LEVEL=INFO \
-    MUSIC21_CORPUS_PATH=/app/data/corpus
+    MUSIC21_MCP_TIMEOUT=30
 
-# Health check
+# Health check - uses the HTTP health endpoint
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import sys; sys.path.insert(0, '/app/src'); from music21_mcp.health_check import check_health; exit(0 if check_health() else 1)"
+    CMD curl -f http://localhost:8000/health || exit 1
 
 # Switch to non-root user
 USER music21user
@@ -74,4 +68,4 @@ USER music21user
 EXPOSE 8000
 
 # Default command - can be overridden
-CMD ["python", "-m", "music21_mcp.launcher", "--mode", "http"]
+CMD ["python", "-m", "music21_mcp.launcher", "http"]

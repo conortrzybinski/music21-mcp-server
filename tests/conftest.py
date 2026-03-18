@@ -2,15 +2,7 @@
 Pytest configuration and fixtures for music21-mcp-server tests
 """
 
-import asyncio
-import sys
-from pathlib import Path
-
 import pytest
-
-# Add src directory to Python path
-src_path = Path(__file__).parent.parent / "src"
-sys.path.insert(0, str(src_path))
 
 # Import what we actually have
 from music21_mcp.tools import (
@@ -43,7 +35,7 @@ def sample_bach_score():
 
     try:
         return corpus.parse("bach/bwv66.6")
-    except:
+    except Exception:
         # Fallback if corpus not available
         from music21 import key, note, stream
 
@@ -74,14 +66,6 @@ def all_tool_classes():
         CounterpointGeneratorTool,
         StyleImitationTool,
     ]
-
-
-@pytest.fixture
-def event_loop():
-    """Create an instance of the default event loop for the test session."""
-    loop = asyncio.get_event_loop_policy().new_event_loop()
-    yield loop
-    loop.close()
 
 
 @pytest.fixture

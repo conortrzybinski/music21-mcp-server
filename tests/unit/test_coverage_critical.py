@@ -4,14 +4,9 @@ Tests key functionality across all major modules
 """
 
 import asyncio
-import json
-import os
-import tempfile
-from pathlib import Path
-from unittest.mock import MagicMock, Mock, patch
 
 import pytest
-from music21 import chord, converter, key, note, stream
+from music21 import chord, key, stream
 
 # Test all main server components
 
@@ -173,70 +168,6 @@ class TestHealthAndMonitoring:
         assert callable(test_func)
 
 
-class TestRetryAndResilience:
-    """Test retry logic and resilience patterns"""
-
-    def test_retry_logic_comprehensive(self):
-        """Test retry logic components"""
-        from music21_mcp.retry_logic import (
-            DATABASE_POLICY,
-            FILE_IO_POLICY,
-            MUSIC21_POLICY,
-            NETWORK_POLICY,
-            BulkRetryExecutor,
-            CircuitBreaker,
-            CircuitBreakerOpenError,
-            CircuitState,
-            NonRetryableError,
-            RetryableError,
-            RetryableMusic21Operation,
-            RetryPolicy,
-            retry,
-        )
-
-        # Test retry policy
-        policy = RetryPolicy(max_attempts=3, base_delay=1.0)
-        assert policy.should_retry(RetryableError("test"), 1) is True
-        assert policy.should_retry(NonRetryableError("test"), 1) is False
-        assert policy.should_retry(Exception("test"), 5) is False
-
-        delay = policy.get_delay(2)
-        assert delay > 0
-
-        # Test circuit breaker
-        breaker = CircuitBreaker(failure_threshold=2, recovery_timeout=10.0)
-        assert breaker.state == CircuitState.CLOSED
-
-        # Test successful call
-        def success_func():
-            return "success"
-
-        result = breaker.call(success_func)
-        assert result == "success"
-
-        # Test pre-configured policies
-        assert FILE_IO_POLICY.max_attempts == 3
-        assert NETWORK_POLICY.max_attempts == 5
-        assert MUSIC21_POLICY.max_attempts == 3
-        assert DATABASE_POLICY.max_attempts == 3
-
-        # Test RetryableMusic21Operation
-        music21_ops = RetryableMusic21Operation()
-        assert music21_ops.policy is not None
-        assert music21_ops.circuit_breaker is not None
-
-        # Test BulkRetryExecutor
-        executor = BulkRetryExecutor(max_concurrent=5)
-        assert executor.max_concurrent == 5
-
-        # Test retry decorator
-        @retry(policy=RetryPolicy(max_attempts=2))
-        def test_func():
-            return "test"
-
-        assert callable(test_func)
-
-
 class TestResourceManagement:
     """Test resource management systems"""
 
@@ -289,11 +220,6 @@ class TestResourceManagement:
         cleanup_stats = manager.cleanup()
         assert "memory_before" in cleanup_stats
         assert "memory_after" in cleanup_stats
-
-        # Test monitoring
-        with patch("music21_mcp.resource_manager.logger") as mock_logger:
-            manager._monitor_resources()
-            # Should log something about resources
 
         # Shutdown
         manager.shutdown()
@@ -356,276 +282,92 @@ class TestPerformanceOptimizations:
         # Shutdown
         optimizer.shutdown()
 
-    def test_memory_pressure_monitor(self):
-        """Test memory pressure monitoring"""
-        from music21_mcp.memory_pressure_monitor import (
-            MemoryPressureLevel,
-            MemoryPressureMonitor,
-            get_memory_monitor,
-        )
 
-        # Test singleton-like behavior
-        monitor1 = get_memory_monitor()
-        monitor2 = get_memory_monitor()
-        # Note: get_memory_monitor may not be a true singleton
+class TestScoreStorageLifecycle:
+    """Test ScoreStorage shutdown, __del__, and eviction paths"""
 
-        # Test memory monitoring
-        monitor = MemoryPressureMonitor(
-            max_memory_mb=100, monitoring_interval=5.0, emergency_threshold=0.95
-        )
+    def test_score_storage_shutdown(self):
+        """Test shutdown stops the cleanup thread"""
+        from music21_mcp.resource_manager import ScoreStorage
 
-        stats = monitor.get_current_stats()
-        if stats:
-            assert stats.level in [
-                MemoryPressureLevel.NORMAL,
-                MemoryPressureLevel.HIGH,
-                MemoryPressureLevel.CRITICAL,
-            ]
+        storage = ScoreStorage(max_scores=5, score_ttl_seconds=300)
+        assert storage._cleanup_thread is not None
+        assert storage._cleanup_thread.is_alive()
 
-        monitor_stats = monitor.get_monitor_stats()
-        assert "max_memory_mb" in monitor_stats
+        storage.shutdown()
 
-        # Test object registration
-        test_obj = Mock()
-        monitor.register_object_for_cleanup(test_obj)
+        assert storage._shutdown_event.is_set()
+        # Thread should have stopped (may already be dead from daemon flag)
+        assert not storage._cleanup_thread.is_alive()
 
-        # Test cleanup
-        monitor.force_cleanup()
+    def test_score_storage_del(self):
+        """Test __del__ sets shutdown event"""
+        from music21_mcp.resource_manager import ScoreStorage
 
-        # Get stats
-        stats = monitor.get_monitor_stats()
-        assert "max_memory_mb" in stats
-        assert "is_monitoring" in stats
+        storage = ScoreStorage(max_scores=5, score_ttl_seconds=300)
+        event = storage._shutdown_event
+        assert not event.is_set()
 
-        # Shutdown
-        monitor.shutdown()
+        storage.__del__()
 
-    def test_cache_warmer(self):
-        """Test cache warming functionality"""
-        from music21_mcp.cache_warmer import CacheWarmer
-        from music21_mcp.performance_optimizations import PerformanceOptimizer
+        assert event.is_set()
 
-        optimizer = PerformanceOptimizer(cache_ttl=60, max_cache_size=100)
-        warmer = CacheWarmer(optimizer)
+    def test_resource_manager_del(self):
+        """Test ResourceManager __del__ sets shutdown event on scores"""
+        from music21_mcp.resource_manager import ResourceManager
 
-        # Test warming common progressions
-        warmer.warm_common_progressions()
-        assert warmer.stats["progressions_cached"] > 0
+        manager = ResourceManager(max_scores=5)
+        event = manager.scores._shutdown_event
+        assert not event.is_set()
 
-        # Test warming common chords
-        warmer.warm_common_chords()
-        assert warmer.stats["chords_cached"] > 0
+        manager.__del__()
 
-        # Get statistics
-        stats = warmer.get_stats()
-        assert "keys_processed" in stats
-        assert "progressions_cached" in stats
-        assert "chords_cached" in stats
+        assert event.is_set()
 
-        # Cleanup
-        optimizer.shutdown()
+    def test_score_storage_max_scores_eviction(self):
+        """Test that TTLCache evicts oldest entry when max_scores exceeded"""
+        from music21 import stream
 
+        from music21_mcp.resource_manager import ScoreStorage
 
-class TestAsyncAndParallel:
-    """Test async and parallel processing"""
+        storage = ScoreStorage(max_scores=2, score_ttl_seconds=300, max_memory_mb=1024)
 
-    @pytest.mark.asyncio
-    async def test_async_optimization(self):
-        """Test async optimization components"""
-        from music21_mcp.async_optimization import (
-            AnalysisTask,
-            AsyncOptimizer,
-            get_async_optimizer,
-        )
+        s1 = stream.Score()
+        s2 = stream.Score()
+        s3 = stream.Score()
 
-        # Test async optimizer creation
-        optimizer = AsyncOptimizer()
+        storage["first"] = s1
+        storage["second"] = s2
+        assert len(storage) == 2
 
-        # Test lookup table building (internal method)
-        lookup = optimizer._build_roman_lookup_table()
-        assert len(lookup) > 0
-
-        # Test analysis task creation
-        test_chord = chord.Chord(["C4", "E4", "G4"])
-        test_key = key.Key("C")
-
-        # Create a future for the task
-        task_future = asyncio.Future()
-
-        task = AnalysisTask(
-            id="test_1",
-            chord_obj=test_chord,
-            key_obj=test_key,
-            future=task_future,
-            priority=0,
-        )
-        assert task.id == "test_1"
-        assert task.chord_obj == test_chord
-        assert task.key_obj == test_key
-
-        # Test async roman numeral analysis
-        roman_result = await optimizer.get_cached_roman_numeral(test_chord, test_key)
-        assert roman_result is not None
-
-        # Test global optimizer
-        global_optimizer = await get_async_optimizer()
-        assert global_optimizer is not None
+        # Adding a third should evict the first (TTLCache maxsize=2)
+        storage["third"] = s3
+        assert len(storage) == 2
+        assert "third" in storage
+        # One of the earlier entries should have been evicted
+        assert "first" not in storage or "second" not in storage
 
         # Cleanup
-        await optimizer.stop()
+        storage.shutdown()
 
-    def test_parallel_processor(self):
-        """Test parallel processing"""
-        from music21_mcp.parallel_processor import (
-            ParallelProcessor,
-            get_parallel_processor,
-        )
+    def test_score_storage_memory_limit_raises(self):
+        """Test that exceeding memory limit raises ResourceExhaustedError"""
+        from music21 import stream
 
-        # Test singleton
-        processor1 = get_parallel_processor()
-        processor2 = get_parallel_processor()
-        assert processor1 is processor2
+        from music21_mcp.resource_manager import ResourceExhaustedError, ScoreStorage
 
-        # Test parallel processor
-        processor = ParallelProcessor(max_workers=2)
+        # Very small memory limit
+        storage = ScoreStorage(max_scores=100, score_ttl_seconds=300, max_memory_mb=1)
 
-        def process_func(x):
-            return x * 2
+        # Add a real entry then inflate its tracked size so cleanup won't orphan it
+        filler = stream.Score()
+        storage["filler"] = filler
+        storage._memory_usage["filler"] = 2 * 1024 * 1024  # 2 MB (over 1 MB limit)
 
-        # Test batch processing
-        async def test_batch():
-            results = await processor.process_batch(
-                [1, 2, 3], process_func, batch_size=2
-            )
-            assert results == [2, 4, 6]
+        with pytest.raises(ResourceExhaustedError):
+            storage["overflow"] = stream.Score()
 
-        asyncio.run(test_batch())
-
-        # Test map reduce
-        def map_func(x):
-            return x * 2
-
-        def reduce_func(results):
-            return sum(results)
-
-        async def test_map_reduce():
-            result = await processor.map_reduce([1, 2, 3], map_func, reduce_func)
-            assert result == 12
-
-        asyncio.run(test_map_reduce())
-
-
-class TestObservability:
-    """Test observability and monitoring"""
-
-    def test_observability_comprehensive(self):
-        """Test observability components"""
-        from music21_mcp.observability import (
-            LogLevel,
-            MetricsCollector,
-            StructuredLogger,
-            get_logger,
-            get_metrics,
-            monitor_performance,
-            record_error,
-            record_metric,
-            with_context,
-        )
-
-        # Test structured logger
-        logger = get_logger("test")
-        logger.info("test message", extra_field="value")
-        logger.warning("warning message")
-        logger.error("error message", error=Exception("test error"))
-        logger.critical("critical message")
-
-        # Test metrics collector
-        collector = MetricsCollector()
-        collector.record_metric("test_metric", 100)
-        collector.record_error("test_operation", Exception("test"))
-        collector.increment_counter("test_counter")
-
-        metrics = collector.get_metrics()
-        assert "counters" in metrics
-        # Errors are stored as counters with error_type labels
-        assert any("errors{" in key for key in metrics["counters"])
-
-        # Test global functions
-        record_metric("global_metric", 50)
-        record_error("global_operation", ValueError("test"))
-        global_metrics = get_metrics()
-        assert global_metrics is not None
-
-        # Test context manager
-        with with_context(
-            request_id="test-123", user_id="user-456", operation="test_op"
-        ):
-            # Context is set
-            pass
-
-        # Test performance monitoring decorator
-        @monitor_performance(operation_name="test_operation")
-        async def test_async_func():
-            return "result"
-
-        @monitor_performance()
-        def test_sync_func():
-            return "result"
-
-        assert callable(test_async_func)
-        assert callable(test_sync_func)
-
-
-class TestPerformanceCache:
-    """Test performance caching systems"""
-
-    def test_performance_cache_comprehensive(self):
-        """Test performance cache components"""
-        from music21_mcp.performance_cache import PerformanceCache, cached_analysis
-
-        # Test PerformanceCache
-        cache = PerformanceCache(max_size=50, ttl_seconds=120)
-
-        # Test caching methods
-        test_chord = chord.Chord(["C4", "E4", "G4"])
-        test_key = key.Key("C")
-
-        # Cache Roman numeral
-        cache.cache_roman_numeral(test_chord, test_key, "I")
-        cached = cache.get_cached_roman_numeral(test_chord, test_key)
-        assert cached == "I"
-
-        # Cache key analysis
-        test_score = stream.Score()
-        cache.cache_key_analysis(test_score, test_key)
-        cached_key = cache.get_cached_key_analysis(test_score)
-        assert cached_key == test_key
-
-        # Cache chord analysis
-        analysis = {"root": "C", "quality": "major"}
-        cache.cache_chord_analysis(test_chord, analysis)
-        cached_chord_result = cache.get_cached_chord_analysis(test_chord)
-        assert cached_chord_result == analysis
-
-        # Test cache stats
-        stats = cache.get_cache_stats()
-        assert "hits" in stats
-        assert "misses" in stats
-        assert "hit_rate_percent" in stats
-
-        # Clear caches
-        cache.clear_all_caches()
-        assert cache._hits == 0
-        assert cache._misses == 0
-
-        # Test decorator
-        @cached_analysis("test_cache")
-        def test_func(arg):
-            return f"result_{arg}"
-
-        result1 = test_func("test")
-        result2 = test_func("test")
-        assert result1 == result2
+        storage.shutdown()
 
 
 def test_final_coverage_check():

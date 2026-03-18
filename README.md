@@ -1,7 +1,7 @@
 # Music21 Analysis - Multi-Interface Music Server
 
 [![CI/CD Pipeline](https://github.com/brightlikethelight/music21-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions/workflows/ci.yml)
-[![Coverage](https://img.shields.io/badge/coverage-80%25-brightgreen.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions)
+[![Coverage](https://img.shields.io/badge/coverage-84%25-brightgreen.svg)](https://github.com/brightlikethelight/music21-mcp-server/actions)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
@@ -44,9 +44,10 @@ Based on 2025 research showing **MCP has 40-50% production success rate**, this 
 pip install music21-mcp-server
 
 # Start the server
-music21-mcp-server --mode mcp   # For Claude Desktop
-music21-mcp-server --mode http  # REST API at localhost:8000
-music21-mcp-server --mode cli   # Interactive CLI
+music21-mcp          # MCP server for Claude Desktop
+music21-http         # REST API at localhost:8000
+music21-cli          # Interactive CLI
+music21-analysis mcp          # Unified launcher (positional arg)
 ```
 
 #### Install from Source
@@ -61,7 +62,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 uv sync
 
 # Or with pip
-pip install -r requirements.txt
+pip install .
 
 # Configure music21 corpus
 python -m music21.configure
@@ -148,14 +149,11 @@ analysis = analyzer.quick_analysis("chorale")
 
 ### Run Tests
 ```bash
-# Reality-based test suite (95% core, 5% adapter)
-python tests/run_reality_tests.py
+# Run all tests
+python -m pytest tests/ -v
 
-# Core music21 tests (must pass)
-python -m pytest tests/core/ -v
-
-# MCP adapter tests (may fail - that's expected)
-python -m pytest tests/adapters/ -v
+# Run with coverage threshold
+python -m pytest tests/ --cov=src/music21_mcp --cov-fail-under=80
 ```
 
 ### Development Setup
@@ -224,10 +222,18 @@ Unified Entry Point:
 
 ### Environment Variables
 ```bash
-# Optional configuration
-export MUSIC21_MCP_LOG_LEVEL=INFO
-export MUSIC21_MCP_CACHE_SIZE=100
-export MUSIC21_MCP_TIMEOUT=30
+# Server host and port (used by HTTP adapter and launcher)
+export MUSIC21_MCP_HOST=127.0.0.1
+export MUSIC21_MCP_PORT=8000
+
+# Operation timeouts (seconds)
+export MUSIC21_MCP_TIMEOUT=30          # General async operation timeout
+export MUSIC21_TOOL_TIMEOUT=30         # Per-tool execution timeout
+export MUSIC21_CHORD_ANALYSIS_TIMEOUT=60  # Chord analysis timeout
+export MUSIC21_BATCH_TIMEOUT=30        # Batch processing timeout
+
+# CORS origins for HTTP adapter (comma-separated)
+export MUSIC21_CORS_ORIGINS="http://localhost:*"
 ```
 
 ### Music21 Setup
@@ -302,14 +308,14 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 
 - Development setup and requirements
 - Code style guidelines (Ruff, MyPy)
-- Testing requirements (maintain >76% coverage)
+- Testing requirements (maintain >80% coverage)
 - Pull request process
 - Branch protection rules
 
 Quick start:
 1. Fork the repository
 2. Create feature branch: `git checkout -b feature/amazing-feature`
-3. Run tests: `pytest tests/ --cov=src/music21_mcp --cov-fail-under=76`
+3. Run tests: `pytest tests/ --cov=src/music21_mcp --cov-fail-under=80`
 4. Commit changes: `git commit -m 'feat: Add amazing feature'`
 5. Push branch: `git push origin feature/amazing-feature`
 6. Submit pull request

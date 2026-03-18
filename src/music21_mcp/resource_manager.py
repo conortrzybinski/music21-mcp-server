@@ -16,13 +16,9 @@ from typing import Any
 import psutil
 from cachetools import TTLCache
 
+from .exceptions import ResourceExhaustedError
+
 logger = logging.getLogger(__name__)
-
-
-class ResourceExhaustedError(Exception):
-    """Raised when resource limits are exceeded"""
-
-    pass
 
 
 class ScoreStorage(MutableMapping[str, Any]):
@@ -97,8 +93,9 @@ class ScoreStorage(MutableMapping[str, Any]):
                 if self._would_exceed_memory_limit(estimated_size):
                     self._memory_warnings += 1
                     raise ResourceExhaustedError(
-                        f"Adding score '{key}' would exceed memory limit "
-                        f"({self.max_memory_mb}MB). Current usage: {self._get_memory_usage_mb():.1f}MB"
+                        resource_type="scores",
+                        current=self._get_memory_usage_mb(),
+                        limit=float(self.max_memory_mb),
                     )
 
             # Store with metadata
@@ -200,10 +197,11 @@ class ScoreStorage(MutableMapping[str, Any]):
         """Estimate memory usage of an object in bytes"""
         try:
             # For music21 objects, use a heuristic based on typical sizes
-            if hasattr(obj, "flat") and hasattr(obj, "notes"):
+            if hasattr(obj, "flatten") and hasattr(obj, "notes"):
                 # This is likely a music21 Score
+                flat_obj = obj.flatten()
                 note_count = (
-                    len(list(obj.flat.notes)) if hasattr(obj.flat, "notes") else 100
+                    len(list(flat_obj.notes)) if hasattr(flat_obj, "notes") else 100
                 )
                 # Estimate ~1KB per note plus base overhead
                 return max(note_count * 1024, 50 * 1024)  # Minimum 50KB
@@ -421,18 +419,3 @@ class ResourceManager:
             "memory_freed": memory_before - memory_after,
             **cleanup_stats,
         }
-
-    def _monitor_resources(self) -> None:
-        """Monitor resource usage and log warnings if needed"""
-        stats = self.get_system_stats()
-        storage = stats["storage"]
-
-        if storage["memory_utilization_percent"] > 75:
-            logger.warning(
-                f"High memory usage: {storage['memory_utilization_percent']:.1f}%"
-            )
-
-        if storage["total_scores"] > self.max_scores * 0.8:
-            logger.warning(
-                f"High score count: {storage['total_scores']}/{self.max_scores}"
-            )

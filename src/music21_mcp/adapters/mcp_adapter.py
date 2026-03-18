@@ -55,9 +55,6 @@ def mcp_tool(tool_name: str, error_prefix: str | None = None):
     ) -> Callable[P, Awaitable[dict[str, Any]]]:
         @functools.wraps(func)
         async def wrapper(*args: P.args, **kwargs: P.kwargs) -> dict[str, Any]:
-            # First arg is self (the MCPAdapter instance)
-            adapter = args[0] if args else None
-
             try:
                 result = await func(*args, **kwargs)
                 return _format_mcp_response(result, tool_name)
@@ -153,7 +150,7 @@ class MCPAdapter:
     def __init__(self):
         """Initialize MCP adapter with core service"""
         self.core_service = MusicAnalysisService()
-        self.mcp_version = "fastmcp-2.9.0"  # Track which version we support
+        self.mcp_version = "fastmcp-2.14.0"  # Track which version we support
 
         logger.info(f"MCP adapter initialized for {self.mcp_version}")
 
@@ -295,7 +292,7 @@ class MCPAdapter:
             return {
                 "supported_version": self.mcp_version,
                 "current_version": current_version,
-                "compatible": current_version.startswith("2.9"),
+                "compatible": current_version.startswith("2."),
                 "core_service_healthy": self.core_service.get_score_count() >= 0,
             }
         except ImportError:
@@ -305,21 +302,3 @@ class MCPAdapter:
                 "compatible": False,
                 "error": "FastMCP not available",
             }
-
-    def create_server(self) -> object:
-        """Create MCP server instance (for testing)"""
-        try:
-            from fastmcp import FastMCP
-
-            server: object = FastMCP()
-            self._register_tools(server)
-            return server
-        except ImportError as err:
-            raise ImportError("FastMCP not available") from err
-
-    def _register_tools(self, server=None):
-        """Register MCP tools with server (for testing)"""
-        # This is a stub for testing purposes
-        # In a real implementation, this would register all the tools
-        # with the FastMCP server instance
-        pass
