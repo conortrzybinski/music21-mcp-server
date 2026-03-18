@@ -57,11 +57,6 @@ music21-cli = "music21_mcp.adapters.cli_adapter:main"
 "Changelog" = "https://github.com/brightlikethelight/music21-mcp-server/blob/main/CHANGELOG.md"
 "Discussions" = "https://github.com/brightlikethelight/music21-mcp-server/discussions"
 
-[tool.black]
-line-length = 88
-target-version = ['py310', 'py311', 'py312']
-include = '\.pyi?$'
-
 [tool.ruff]
 line-length = 88
 target-version = "py310"
@@ -97,7 +92,6 @@ ignore = [
     "S608",   # possible SQL injection (false positives)
     "S311",   # pseudo-random generators are OK for music generation
     "B007",   # unused loop control variable (sometimes needed for clarity)
-    "UP038",  # isinstance with union (use X | Y) -- too many instances, low value
     "S110",   # try-except-pass (acceptable for optional operations)
     "S112",   # try-except-continue (acceptable in loops)
     "F541",   # f-string without placeholders (sometimes clearer)
@@ -151,10 +145,6 @@ disallow_untyped_defs = false
 warn_return_any = false
 warn_unreachable = true
 strict_equality = true
-
-[tool.isort]
-profile = "black"
-line_length = 88
 
 [[tool.mypy.overrides]]
 module = "music21.*"
