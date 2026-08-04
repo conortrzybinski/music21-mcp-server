@@ -14,8 +14,10 @@ from .harmony_analysis_tool import HarmonyAnalysisTool
 from .import_tool import ImportScoreTool
 from .key_analysis_tool import KeyAnalysisTool
 from .list_tool import ListScoresTool
+from .lyric_audit_tool import LyricAuditTool
 from .pattern_recognition_tool import PatternRecognitionTool
 from .score_info_tool import ScoreInfoTool
+from .score_slice_tool import ScoreSliceTool
 from .style_imitation_tool import StyleImitationTool
 from .text_underlay_tool import TextUnderlayTool
 from .voice_leading_tool import VoiceLeadingAnalysisTool
@@ -37,4 +39,6 @@ __all__ = [
     "TextUnderlayTool",
     "ChoralTextDistributionTool",
     "ContinuationTool",
+    "ScoreSliceTool",
+    "LyricAuditTool",
 ]

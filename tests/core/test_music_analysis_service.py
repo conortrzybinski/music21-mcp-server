@@ -275,6 +275,8 @@ class TestMusicAnalysisServiceCore:
             "analyze_harmony",
             "analyze_voice_leading",
             "recognize_patterns",
+            "score_slice",
+            "lyric_audit",
             "text_underlay",
             "choral_text_distribution",
             "phrase_aware_continuation",

@@ -31,7 +31,7 @@ class TestHealthCheckWrapper:
     @pytest.mark.asyncio
     async def test_health_check_tool_count(self):
         result = await sm.health_check.fn()
-        assert result["tools_available"] == 16
+        assert result["tools_available"] == 18
 
 
 class TestScoreManagementWrappers:
@@ -85,6 +85,16 @@ class TestAnalysisWrappers:
     @pytest.mark.asyncio
     async def test_pattern_recognition_wrapper_missing(self):
         result = await sm.pattern_recognition.fn("nonexistent_wrapper")
+        assert result["status"] == "error"
+
+    @pytest.mark.asyncio
+    async def test_score_slice_wrapper_missing(self):
+        result = await sm.score_slice.fn("nonexistent_wrapper")
+        assert result["status"] == "error"
+
+    @pytest.mark.asyncio
+    async def test_lyric_audit_wrapper_missing(self):
+        result = await sm.lyric_audit.fn("nonexistent_wrapper")
         assert result["status"] == "error"
 
 
@@ -162,11 +172,13 @@ class TestModuleLevelObjects:
 
     def test_supported_tools_list(self):
         tools = mcp_adapter.get_supported_tools()
-        assert len(tools) == 16
+        assert len(tools) == 18
         assert "import_score" in tools
         assert "text_underlay" in tools
         assert "choral_text_distribution" in tools
         assert "phrase_aware_continuation" in tools
+        assert "score_slice" in tools
+        assert "lyric_audit" in tools
         assert "health_check" not in tools  # health_check is server-level only
 
     def test_protocol_compatibility(self):

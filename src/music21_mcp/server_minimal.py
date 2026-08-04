@@ -121,6 +121,52 @@ async def pattern_recognition(score_id: str, pattern_type: str = "melodic"):
 
 
 @mcp.tool()
+async def score_slice(
+    score_id: str,
+    start_measure: int = 1,
+    end_measure: int | None = None,
+    parts: str | list[str | int] | None = None,
+    include_rests: bool = True,
+    include_lyrics: bool = True,
+    include_annotations: bool = True,
+    max_events: int = 400,
+    detail: str = "compact",
+):
+    """Read up to 32 measures with voices, pitches, lyrics, and directions."""
+    return await mcp_adapter.score_slice(
+        score_id,
+        start_measure,
+        end_measure,
+        parts,
+        include_rests,
+        include_lyrics,
+        include_annotations,
+        max_events,
+        detail,
+    )
+
+
+@mcp.tool()
+async def lyric_audit(
+    score_id: str,
+    parts: str | list[str | int] | None = None,
+    language: str = "latin",
+    verse: int | str | None = None,
+    include_lyric_events: bool = False,
+    include_word_details: bool = False,
+):
+    """Audit lyric states, coverage, and cross-part text without editing."""
+    return await mcp_adapter.lyric_audit(
+        score_id,
+        parts,
+        language,
+        verse,
+        include_lyric_events,
+        include_word_details,
+    )
+
+
+@mcp.tool()
 async def harmonize_melody(
     score_id: str, style: str = "classical", voice_parts: int = 4
 ):
@@ -258,7 +304,7 @@ def main():
         return
 
     logger.info("🎵 Music21 MCP Server - Minimal Implementation")
-    logger.info("📊 17 MCP tools available (16 analysis/composition + health check)")
+    logger.info("📊 19 MCP tools available (18 analysis/composition + health check)")
     logger.info("🚀 Starting server...")
 
     try:

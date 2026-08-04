@@ -216,6 +216,52 @@ class MCPAdapter:
         """MCP tool: Recognize musical patterns"""
         return await self.core_service.recognize_patterns(score_id, pattern_type)
 
+    @mcp_tool("score_slice", "Score slice")
+    async def score_slice(
+        self,
+        score_id: str,
+        start_measure: int = 1,
+        end_measure: int | None = None,
+        parts: str | list[str | int] | None = None,
+        include_rests: bool = True,
+        include_lyrics: bool = True,
+        include_annotations: bool = True,
+        max_events: int = 400,
+        detail: str = "compact",
+    ) -> dict[str, Any]:
+        """MCP tool: Inspect a bounded polyphonic score region in detail."""
+        return await self.core_service.score_slice(
+            score_id,
+            start_measure,
+            end_measure,
+            parts,
+            include_rests,
+            include_lyrics,
+            include_annotations,
+            max_events,
+            detail,
+        )
+
+    @mcp_tool("lyric_audit", "Lyric audit")
+    async def lyric_audit(
+        self,
+        score_id: str,
+        parts: str | list[str | int] | None = None,
+        language: str = "latin",
+        verse: int | str | None = None,
+        include_lyric_events: bool = False,
+        include_word_details: bool = False,
+    ) -> dict[str, Any]:
+        """MCP tool: Audit lyric engraving without mutating the score."""
+        return await self.core_service.lyric_audit(
+            score_id,
+            parts,
+            language,
+            verse,
+            include_lyric_events,
+            include_word_details,
+        )
+
     @mcp_tool("harmonize_melody", "Harmonization")
     async def harmonize_melody(
         self, score_id: str, style: str = "classical", voice_parts: int = 4
@@ -333,6 +379,8 @@ class MCPAdapter:
             "harmony_analysis",
             "voice_leading_analysis",
             "pattern_recognition",
+            "score_slice",
+            "lyric_audit",
             "harmonize_melody",
             "generate_counterpoint",
             "imitate_style",

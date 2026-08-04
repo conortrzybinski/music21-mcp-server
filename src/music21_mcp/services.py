@@ -26,8 +26,10 @@ from .tools import (
     ImportScoreTool,
     KeyAnalysisTool,
     ListScoresTool,
+    LyricAuditTool,
     PatternRecognitionTool,
     ScoreInfoTool,
+    ScoreSliceTool,
     StyleImitationTool,
     TextUnderlayTool,
     VoiceLeadingAnalysisTool,
@@ -86,6 +88,8 @@ class MusicAnalysisService:
         self.harmony_tool = HarmonyAnalysisTool(self.scores)
         self.voice_leading_tool = VoiceLeadingAnalysisTool(self.scores)
         self.pattern_tool = PatternRecognitionTool(self.scores)
+        self.score_slice_tool = ScoreSliceTool(self.scores)
+        self.lyric_audit_tool = LyricAuditTool(self.scores)
 
         # Generation tools
         self.harmonization_tool = HarmonizationTool(self.scores)
@@ -159,6 +163,50 @@ class MusicAnalysisService:
         """Recognize musical patterns (melodic, rhythmic, harmonic)"""
         return await self.pattern_tool.execute(
             score_id=score_id, pattern_type=pattern_type
+        )
+
+    async def score_slice(
+        self,
+        score_id: str,
+        start_measure: int = 1,
+        end_measure: int | None = None,
+        parts: str | list[str | int] | None = None,
+        include_rests: bool = True,
+        include_lyrics: bool = True,
+        include_annotations: bool = True,
+        max_events: int = 400,
+        detail: str = "compact",
+    ) -> dict[str, Any]:
+        """Return compact notation evidence for a bounded measure range."""
+        return await self.score_slice_tool.execute(
+            score_id=score_id,
+            start_measure=start_measure,
+            end_measure=end_measure,
+            parts=parts,
+            include_rests=include_rests,
+            include_lyrics=include_lyrics,
+            include_annotations=include_annotations,
+            max_events=max_events,
+            detail=detail,
+        )
+
+    async def lyric_audit(
+        self,
+        score_id: str,
+        parts: str | list[str | int] | None = None,
+        language: str = "latin",
+        verse: int | str | None = None,
+        include_lyric_events: bool = False,
+        include_word_details: bool = False,
+    ) -> dict[str, Any]:
+        """Audit existing lyric structure and coverage without changing the score."""
+        return await self.lyric_audit_tool.execute(
+            score_id=score_id,
+            parts=parts,
+            language=language,
+            verse=verse,
+            include_lyric_events=include_lyric_events,
+            include_word_details=include_word_details,
         )
 
     # === Generation Operations ===
@@ -249,6 +297,8 @@ class MusicAnalysisService:
             "analyze_harmony",
             "analyze_voice_leading",
             "recognize_patterns",
+            "score_slice",
+            "lyric_audit",
             "harmonize_melody",
             "generate_counterpoint",
             "imitate_style",

@@ -17,8 +17,10 @@ from music21_mcp.tools import (
     ImportScoreTool,
     KeyAnalysisTool,
     ListScoresTool,
+    LyricAuditTool,
     PatternRecognitionTool,
     ScoreInfoTool,
+    ScoreSliceTool,
     StyleImitationTool,
     TextUnderlayTool,
     VoiceLeadingAnalysisTool,
@@ -71,6 +73,8 @@ def all_tool_classes():
         TextUnderlayTool,
         ChoralTextDistributionTool,
         ContinuationTool,
+        ScoreSliceTool,
+        LyricAuditTool,
     ]
 
 

@@ -8,25 +8,38 @@
 [![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![MCP](https://img.shields.io/badge/MCP-Model%20Context%20Protocol-green)](https://modelcontextprotocol.io)
 
-**Professional music analysis with 4 different interfaces** - MCP server, HTTP API, CLI tools, and Python library. Built on the powerful music21 library with protocol-independent architecture for maximum reliability.
+**Professional music analysis through MCP, HTTP, CLI, and Python interfaces.**
+Built on music21 with a protocol-independent core. This fork's complete 18-tool
+composer-collaboration surface is available through MCP and
+`MusicAnalysisService`; the HTTP, CLI, and convenience Python adapters currently
+expose a legacy subset.
 
 ## 🎯 Why Multiple Interfaces?
 
-Based on 2025 research showing **MCP has 40-50% production success rate**, this project provides **multiple pathways** to the same powerful music21 analysis functionality:
+The music-analysis service is separated from its protocol adapters so callers
+can choose the integration appropriate to their workflow:
 
-- 📡 **MCP Server** - For Claude Desktop integration (when it works)
-- 🌐 **HTTP API** - For web applications (reliable backup) 
-- 💻 **CLI Tools** - For automation (always works)
-- 🐍 **Python Library** - For direct programming access
+- 📡 **MCP Server** - Complete 18-tool composer-collaboration surface
+- 🌐 **HTTP API** - Web integration for the legacy analysis surface
+- 💻 **CLI Tools** - Interactive and scripted legacy operations
+- 🐍 **Python Library** - Direct access to `MusicAnalysisService`, plus legacy
+  convenience adapters
 
 ## 🎵 Core Music Analysis Features
 
-### Analysis and Composition Tools (16 Available)
-- **Import & Export**: MusicXML, MIDI, ABC, Lilypond, music21 corpus
+### Analysis and Composition Tools (18 MCP/Core Tools)
+- **Import**: MuseScore (`.mscz`/`.mscx`), MusicXML, MIDI, ABC, Humdrum, MEI,
+  and the music21 corpus
+- **Export**: MusicXML, MIDI, ABC, LilyPond and rendered formats where their
+  external dependencies are installed
 - **Key Analysis**: Multiple algorithms (Krumhansl, Aarden, Bellman-Budge)
 - **Harmony Analysis**: Roman numerals, chord progressions, cadence detection
 - **Voice Leading**: Parallel motion detection, voice crossing analysis
 - **Pattern Recognition**: Melodic, rhythmic, and harmonic patterns
+- **Compact Score Slices**: Bounded note/chord/rest events with exact voice,
+  offset, lyric, meter/key, tempo, and direction context
+- **Lyric Audit**: Read-only syllabic-state, coverage, reconstruction, and
+  cross-part consistency evidence with measure-specific locators
 
 ### Advanced Capabilities  
 - **Harmonization**: Bach chorale and jazz style harmonization
@@ -35,7 +48,6 @@ Based on 2025 research showing **MCP has 40-50% production success rate**, this 
 - **Text Underlay**: Prosody-aware lyric fitting with bounded melismas
 - **Choral Text Distribution**: Simultaneous, staggered, and imitative entries
 - **Phrase-Aware Continuation**: Motive development toward requested cadences
-- **Score Manipulation**: Transposition, time stretching, orchestration
 
 ## 🚀 Quick Start
 
@@ -92,12 +104,19 @@ python -m music21_mcp.launcher mcp
       "command": "python",
       "args": ["-m", "music21_mcp.server_minimal"],
       "env": {
-        "PYTHONPATH": "/path/to/music21-mcp-server/src"
+        "PYTHONPATH": "/path/to/music21-mcp-server/src",
+        "MUSESCORE_EXECUTABLE": "/path/to/MuseScore4",
+        "MUSIC21_ALLOWED_IMPORT_ROOTS": "/path/to/composer/projects",
+        "MUSIC21_TOOL_TIMEOUT": "120"
       }
     }
   }
 }
 ```
+
+On Windows, JSON paths require escaped backslashes, for example
+`C:\\Program Files\\MuseScore 4\\bin\\MuseScore4.exe`. Restart the MCP host
+after changing its environment.
 
 #### 🌐 HTTP API Server (for web apps)
 ```bash
@@ -182,7 +201,7 @@ mypy src/
 ```
 Core Value Layer:
 ├── services.py              # Music21 analysis service (protocol-independent)
-└── tools/                   # 16 music analysis and composition tools
+└── tools/                   # 18 music analysis and composition tools
 
 Protocol Adapter Layer:
 ├── adapters/mcp_adapter.py   # MCP protocol isolation
@@ -236,6 +255,10 @@ export MUSIC21_TOOL_TIMEOUT=30         # Per-tool execution timeout
 export MUSIC21_CHORD_ANALYSIS_TIMEOUT=60  # Chord analysis timeout
 export MUSIC21_BATCH_TIMEOUT=30        # Batch processing timeout
 
+# Optional MuseScore import configuration
+export MUSESCORE_EXECUTABLE="/path/to/MuseScore4"
+export MUSIC21_ALLOWED_IMPORT_ROOTS="/path/to/composer/projects"
+
 # CORS origins for HTTP adapter (comma-separated)
 export MUSIC21_CORS_ORIGINS="http://localhost:*"
 ```
@@ -246,24 +269,114 @@ export MUSIC21_CORS_ORIGINS="http://localhost:*"
 python -m music21.configure
 ```
 
+### Non-destructive MuseScore import
+
+`import_score` accepts `.mscz` and `.mscx` files when MuseScore is installed.
+It invokes MuseScore directly (no live MuseScore plug-in or network bridge),
+exports a MusicXML derivative inside a temporary directory, parses that
+derivative with music21, and then removes it. The original MuseScore file is
+never rewritten. Import responses report conversion warnings and any bounded
+MusicXML repairs that were required. The importer also reads tempo text and
+gradual-tempo metadata directly from the native MuseScore XML and returns it as
+`import_context`. This preserves semantic markings such as `half = quarter`
+when MuseScore's MusicXML export contains only private-use music glyphs or an
+invalid empty metronome element.
+
+Set `MUSESCORE_EXECUTABLE` when MuseScore is not on `PATH` or in a standard
+installation location. Imports are restricted to the server's working
+directory and temporary directory by default. To opt additional composer
+project folders into file access, set `MUSIC21_ALLOWED_IMPORT_ROOTS` to a
+platform path-separator-delimited allowlist (`;` on Windows, `:` on macOS and
+Linux).
+
+### Composer collaboration workflow
+
+The fork's XML-first workflow is intentionally analytical and approval-based:
+
+1. Import the composer's authoritative `.mscz` with
+   `import_score(score_id="magnificat", source="/path/Magnificat.mscz",
+   source_type="file")`.
+2. Use `score_slice` on a focused passage. The default is eight measures; each
+   call is capped at 32 measures and rejects oversized event payloads instead
+   of silently dropping later voices. `detail="compact"` is the model-friendly
+   default; request `detail="full"` only when exact additional event metadata is
+   needed.
+3. Run `lyric_audit` for structural underlay evidence, reconstructed text,
+   coverage, and conservative cross-part observations. Raw lyric events and
+   per-word locator details are opt-in so a normal audit remains compact.
+4. Discuss recommendations with the composer and apply approved changes in
+   MuseScore. These inspection tools are read-only and never rewrite the source
+   score.
+
+Typical focused calls use arguments such as:
+
+```json
+{
+  "score_slice": {
+    "score_id": "magnificat",
+    "start_measure": 17,
+    "end_measure": 24,
+    "parts": ["Soprano", "Alto", "Tenor", "Bass"],
+    "detail": "compact",
+    "max_events": 400
+  },
+  "lyric_audit": {
+    "score_id": "magnificat",
+    "language": "latin",
+    "verse": 1,
+    "include_lyric_events": false,
+    "include_word_details": false
+  }
+}
+```
+
+Part names are matched case-insensitively; integer selectors are one-based.
+`score_slice` defaults to eight measures, allows at most 32 measures, defaults
+to 400 events, and has a hard ceiling of 4,000 events.
+
+MusicXML carries musical structure well, but it is not a complete engraving
+round trip: MuseScore-only layout, autoplace, collision, and some playback data
+can be absent. The native-context recovery above covers known tempo-semantics
+losses; final visual engraving still belongs in MuseScore. No live plug-in or
+unauthenticated network bridge is required for this workflow.
+
+### Interpretation boundaries
+
+`score_slice` exposes the written evidence a reasoning model needs for close
+reading; it does not declare a single harmonic interpretation. The existing
+key, chord, and harmony analyzers are heuristic and primarily tonal, so their
+labels should be checked against focused slices in music that uses clusters,
+extended tonality, or rapid local modulation. Likewise, the current
+voice-leading analyzer is advisory for complex polyphony rather than proof of
+onset-synchronized contrapuntal errors.
+
+`lyric_audit` checks encoded lyric states, coverage, and cross-part consistency.
+It does not by itself prove Latin spelling, syllabification, stress, diction, or
+the composer's intended melismas. Those decisions remain collaborative. The
+server also does not yet maintain a persistent composer-style profile; supply
+reference scores and a piece-specific style brief when stylistic continuity is
+important.
+
 ## 🛠️ Available Analysis Tools
 
-1. **import_score** - Import from corpus, files, URLs
+1. **import_score** - Import from the corpus and supported local files
 2. **list_scores** - List all imported scores  
-3. **get_score_info** - Detailed score information
+3. **score_info** - Detailed score information
 4. **export_score** - Export to MIDI, MusicXML, etc.
 5. **delete_score** - Remove scores from storage
-6. **analyze_key** - Key signature analysis
-7. **analyze_chords** - Chord progression analysis
-8. **analyze_harmony** - Roman numeral/functional harmony
-9. **analyze_voice_leading** - Voice leading quality analysis
-10. **recognize_patterns** - Melodic/rhythmic patterns
+6. **key_analysis** - Key signature analysis
+7. **chord_analysis** - Chord progression analysis
+8. **harmony_analysis** - Roman numeral/functional harmony
+9. **voice_leading_analysis** - Voice leading quality analysis
+10. **pattern_recognition** - Melodic/rhythmic patterns
 11. **harmonize_melody** - Automatic harmonization
 12. **generate_counterpoint** - Counterpoint generation
 13. **imitate_style** - Style imitation and generation
 14. **text_underlay** - Prosody-aware lyric fitting for a melody
 15. **choral_text_distribution** - Multi-voice lyric distribution and entries
 16. **phrase_aware_continuation** - Motivic, form- and cadence-aware continuation
+17. **score_slice** - Compact, bounded score evidence for close musical reading
+18. **lyric_audit** - Read-only lyric structure, coverage, and consistency audit
 
 ## 🚀 Quick Examples
 
