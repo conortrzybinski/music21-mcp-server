@@ -31,7 +31,7 @@ class TestHealthCheckWrapper:
     @pytest.mark.asyncio
     async def test_health_check_tool_count(self):
         result = await sm.health_check.fn()
-        assert result["tools_available"] == 13
+        assert result["tools_available"] == 16
 
 
 class TestScoreManagementWrappers:
@@ -109,6 +109,21 @@ class TestGenerationWrappers:
         result = await sm.imitate_style.fn(score_id="nonexistent_wrapper")
         assert result["status"] == "error"
 
+    @pytest.mark.asyncio
+    async def test_text_underlay_wrapper_missing(self):
+        result = await sm.text_underlay.fn("nonexistent_wrapper", "Kyrie")
+        assert result["status"] == "error"
+
+    @pytest.mark.asyncio
+    async def test_choral_text_distribution_wrapper_missing(self):
+        result = await sm.choral_text_distribution.fn("nonexistent_wrapper", "Gloria")
+        assert result["status"] == "error"
+
+    @pytest.mark.asyncio
+    async def test_phrase_aware_continuation_wrapper_missing(self):
+        result = await sm.phrase_aware_continuation.fn("nonexistent_wrapper")
+        assert result["status"] == "error"
+
 
 # ---------------------------------------------------------------------------
 # Part 2: MCP resource handler tests
@@ -147,8 +162,11 @@ class TestModuleLevelObjects:
 
     def test_supported_tools_list(self):
         tools = mcp_adapter.get_supported_tools()
-        assert len(tools) == 13
+        assert len(tools) == 16
         assert "import_score" in tools
+        assert "text_underlay" in tools
+        assert "choral_text_distribution" in tools
+        assert "phrase_aware_continuation" in tools
         assert "health_check" not in tools  # health_check is server-level only
 
     def test_protocol_compatibility(self):

@@ -21,7 +21,7 @@ Based on 2025 research showing **MCP has 40-50% production success rate**, this 
 
 ## 🎵 Core Music Analysis Features
 
-### Analysis Tools (13 Available)
+### Analysis and Composition Tools (16 Available)
 - **Import & Export**: MusicXML, MIDI, ABC, Lilypond, music21 corpus
 - **Key Analysis**: Multiple algorithms (Krumhansl, Aarden, Bellman-Budge)
 - **Harmony Analysis**: Roman numerals, chord progressions, cadence detection
@@ -32,6 +32,9 @@ Based on 2025 research showing **MCP has 40-50% production success rate**, this 
 - **Harmonization**: Bach chorale and jazz style harmonization
 - **Counterpoint**: Species counterpoint generation (1-5)
 - **Style Imitation**: Learn and generate music in composer styles
+- **Text Underlay**: Prosody-aware lyric fitting with bounded melismas
+- **Choral Text Distribution**: Simultaneous, staggered, and imitative entries
+- **Phrase-Aware Continuation**: Motive development toward requested cadences
 - **Score Manipulation**: Transposition, time stretching, orchestration
 
 ## 🚀 Quick Start
@@ -179,7 +182,7 @@ mypy src/
 ```
 Core Value Layer:
 ├── services.py              # Music21 analysis service (protocol-independent)
-└── tools/                   # 13 music analysis tools
+└── tools/                   # 16 music analysis and composition tools
 
 Protocol Adapter Layer:
 ├── adapters/mcp_adapter.py   # MCP protocol isolation
@@ -258,6 +261,9 @@ python -m music21.configure
 11. **harmonize_melody** - Automatic harmonization
 12. **generate_counterpoint** - Counterpoint generation
 13. **imitate_style** - Style imitation and generation
+14. **text_underlay** - Prosody-aware lyric fitting for a melody
+15. **choral_text_distribution** - Multi-voice lyric distribution and entries
+16. **phrase_aware_continuation** - Motivic, form- and cadence-aware continuation
 
 ## 🚀 Quick Examples
 

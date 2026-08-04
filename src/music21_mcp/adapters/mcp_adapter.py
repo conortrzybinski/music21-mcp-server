@@ -262,6 +262,62 @@ class MCPAdapter:
             "Must provide either score_id or composer",
         )
 
+    @mcp_tool("text_underlay", "Text underlay")
+    async def text_underlay(
+        self,
+        score_id: str,
+        text: str,
+        language: str = "english",
+        melisma_limit: int = 3,
+        prefer_stressed_on_strong: bool = True,
+    ) -> dict[str, Any]:
+        """MCP tool: Fit lyric text to an existing melody."""
+        return await self.core_service.text_underlay(
+            score_id,
+            text,
+            language,
+            melisma_limit,
+            prefer_stressed_on_strong,
+        )
+
+    @mcp_tool("choral_text_distribution", "Choral text distribution")
+    async def choral_text_distribution(
+        self,
+        score_id: str,
+        text: str,
+        voice_assignments: dict[str, str] | None = None,
+        entry_scheme: str = "staggered",
+        stagger_offset_measures: int = 2,
+    ) -> dict[str, Any]:
+        """MCP tool: Distribute lyric text across choral voices."""
+        return await self.core_service.choral_text_distribution(
+            score_id,
+            text,
+            voice_assignments,
+            entry_scheme,
+            stagger_offset_measures,
+        )
+
+    @mcp_tool("phrase_aware_continuation", "Phrase-aware continuation")
+    async def phrase_aware_continuation(
+        self,
+        score_id: str,
+        continuation_length: int = 8,
+        form_context: str | None = None,
+        preserve_motifs: bool = True,
+        cadence_target: str | None = None,
+        style: str = "classical",
+    ) -> dict[str, Any]:
+        """MCP tool: Generate a phrase-aware continuation of a score."""
+        return await self.core_service.phrase_aware_continuation(
+            score_id,
+            continuation_length,
+            form_context,
+            preserve_motifs,
+            cadence_target,
+            style,
+        )
+
     # === Protocol Evolution Support ===
 
     def get_supported_tools(self) -> list[str]:
@@ -280,6 +336,9 @@ class MCPAdapter:
             "harmonize_melody",
             "generate_counterpoint",
             "imitate_style",
+            "text_underlay",
+            "choral_text_distribution",
+            "phrase_aware_continuation",
         ]
 
     def check_protocol_compatibility(self) -> dict[str, Any]:

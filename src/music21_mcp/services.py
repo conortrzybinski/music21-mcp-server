@@ -15,7 +15,9 @@ from .resource_manager import ResourceManager
 
 # Import tools but isolate from protocol concerns
 from .tools import (
+    ChoralTextDistributionTool,
     ChordAnalysisTool,
+    ContinuationTool,
     CounterpointGeneratorTool,
     DeleteScoreTool,
     ExportScoreTool,
@@ -27,6 +29,7 @@ from .tools import (
     PatternRecognitionTool,
     ScoreInfoTool,
     StyleImitationTool,
+    TextUnderlayTool,
     VoiceLeadingAnalysisTool,
 )
 
@@ -88,6 +91,9 @@ class MusicAnalysisService:
         self.harmonization_tool = HarmonizationTool(self.scores)
         self.style_tool = StyleImitationTool(self.scores)
         self.counterpoint_tool = CounterpointGeneratorTool(self.scores)
+        self.text_underlay_tool = TextUnderlayTool(self.scores)
+        self.choral_text_distribution_tool = ChoralTextDistributionTool(self.scores)
+        self.continuation_tool = ContinuationTool(self.scores)
 
     # === Core Operations ===
 
@@ -175,6 +181,59 @@ class MusicAnalysisService:
             score_id=score_id, target_style=target_style
         )
 
+    async def text_underlay(
+        self,
+        score_id: str,
+        text: str,
+        language: str = "english",
+        melisma_limit: int = 3,
+        prefer_stressed_on_strong: bool = True,
+    ) -> dict[str, Any]:
+        """Fit lyric text to the melody of an existing score."""
+        return await self.text_underlay_tool.execute(
+            score_id=score_id,
+            text=text,
+            language=language,
+            melisma_limit=melisma_limit,
+            prefer_stressed_on_strong=prefer_stressed_on_strong,
+        )
+
+    async def choral_text_distribution(
+        self,
+        score_id: str,
+        text: str,
+        voice_assignments: dict[str, str] | None = None,
+        entry_scheme: str = "staggered",
+        stagger_offset_measures: int = 2,
+    ) -> dict[str, Any]:
+        """Distribute lyric text across the parts of a choral score."""
+        return await self.choral_text_distribution_tool.execute(
+            score_id=score_id,
+            text=text,
+            voice_assignments=voice_assignments,
+            entry_scheme=entry_scheme,
+            stagger_offset_measures=stagger_offset_measures,
+        )
+
+    async def phrase_aware_continuation(
+        self,
+        score_id: str,
+        continuation_length: int = 8,
+        form_context: str | None = None,
+        preserve_motifs: bool = True,
+        cadence_target: str | None = None,
+        style: str = "classical",
+    ) -> dict[str, Any]:
+        """Generate and store a phrase-aware continuation of a score."""
+        return await self.continuation_tool.execute(
+            score_id=score_id,
+            continuation_length=continuation_length,
+            form_context=form_context,
+            preserve_motifs=preserve_motifs,
+            cadence_target=cadence_target,
+            style=style,
+        )
+
     # === Utility Methods ===
 
     def get_available_tools(self) -> list[str]:
@@ -193,6 +252,9 @@ class MusicAnalysisService:
             "harmonize_melody",
             "generate_counterpoint",
             "imitate_style",
+            "text_underlay",
+            "choral_text_distribution",
+            "phrase_aware_continuation",
         ]
 
     def get_score_count(self) -> int:

@@ -149,6 +149,58 @@ async def imitate_style(
     )
 
 
+@mcp.tool()
+async def text_underlay(
+    score_id: str,
+    text: str,
+    language: str = "english",
+    melisma_limit: int = 3,
+    prefer_stressed_on_strong: bool = True,
+):
+    """Fit lyric text to an existing melody with prosodic underlay."""
+    return await mcp_adapter.text_underlay(
+        score_id, text, language, melisma_limit, prefer_stressed_on_strong
+    )
+
+
+@mcp.tool()
+async def choral_text_distribution(
+    score_id: str,
+    text: str,
+    voice_assignments: dict[str, str] | None = None,
+    entry_scheme: str = "staggered",
+    stagger_offset_measures: int = 2,
+):
+    """Distribute lyric text across two to eight choral voices."""
+    return await mcp_adapter.choral_text_distribution(
+        score_id,
+        text,
+        voice_assignments,
+        entry_scheme,
+        stagger_offset_measures,
+    )
+
+
+@mcp.tool()
+async def phrase_aware_continuation(
+    score_id: str,
+    continuation_length: int = 8,
+    form_context: str | None = None,
+    preserve_motifs: bool = True,
+    cadence_target: str | None = None,
+    style: str = "classical",
+):
+    """Generate a motivic continuation toward a requested cadence."""
+    return await mcp_adapter.phrase_aware_continuation(
+        score_id,
+        continuation_length,
+        form_context,
+        preserve_motifs,
+        cadence_target,
+        style,
+    )
+
+
 # Additional tools available through adapter but simplified for MCP
 @mcp.tool()
 async def health_check():
@@ -206,7 +258,7 @@ def main():
         return
 
     logger.info("🎵 Music21 MCP Server - Minimal Implementation")
-    logger.info("📊 14 MCP tools available (13 analysis + health check)")
+    logger.info("📊 17 MCP tools available (16 analysis/composition + health check)")
     logger.info("🚀 Starting server...")
 
     try:

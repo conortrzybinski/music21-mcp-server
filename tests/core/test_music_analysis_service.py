@@ -275,6 +275,9 @@ class TestMusicAnalysisServiceCore:
             "analyze_harmony",
             "analyze_voice_leading",
             "recognize_patterns",
+            "text_underlay",
+            "choral_text_distribution",
+            "phrase_aware_continuation",
         ]
 
         for tool in expected_tools:

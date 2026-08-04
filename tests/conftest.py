@@ -6,7 +6,9 @@ import pytest
 
 # Import what we actually have
 from music21_mcp.tools import (
+    ChoralTextDistributionTool,
     ChordAnalysisTool,
+    ContinuationTool,
     CounterpointGeneratorTool,
     DeleteScoreTool,
     ExportScoreTool,
@@ -18,6 +20,7 @@ from music21_mcp.tools import (
     PatternRecognitionTool,
     ScoreInfoTool,
     StyleImitationTool,
+    TextUnderlayTool,
     VoiceLeadingAnalysisTool,
 )
 
@@ -65,6 +68,9 @@ def all_tool_classes():
         HarmonizationTool,
         CounterpointGeneratorTool,
         StyleImitationTool,
+        TextUnderlayTool,
+        ChoralTextDistributionTool,
+        ContinuationTool,
     ]
 
 
