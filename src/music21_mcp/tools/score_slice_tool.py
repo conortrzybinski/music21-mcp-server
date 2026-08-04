@@ -254,11 +254,9 @@ class ScoreSliceTool(BaseTool):
     def _select_parts(
         self, score: stream.Stream, requested: Any
     ) -> list[_PartSelection]:
-        raw_parts: list[stream.Stream]
-        if isinstance(score, stream.Score):
-            raw_parts = [part for part in score.parts]
-        else:
-            raw_parts = [score]
+        raw_parts: list[stream.Stream] = (
+            list(score.parts) if isinstance(score, stream.Score) else [score]
+        )
         if not raw_parts:
             raise ValueError("score contains no parts")
 

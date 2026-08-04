@@ -452,4 +452,5 @@ MIT License - see [LICENSE](LICENSE) file for details.
 
 ---
 
-**Choose the interface that works for you. All provide the same powerful music21 analysis capabilities!** 🎵
+**Choose the interface that fits the workflow. Use MCP or
+`MusicAnalysisService` for this fork's complete composer-collaboration toolset.** 🎵
