@@ -1,6 +1,6 @@
 # Handoff: music21-mcp-server — New Choral Composition Tools
 
-**Repo:** `c:\Users\cjtrz\Documents\GitHub\music21-mcp-server` (fork of `brightlikethelight/music21-mcp-server`, MIT license)
+**Repo:** `c:\dev\personal\music21-mcp-server` (fork of `brightlikethelight/music21-mcp-server`, MIT license)
 
 **Goal:** Add three new MCP tools for choral composition assistance: text underlay, multi-voice text distribution, and phrase-aware continuation/suggestion.
 
