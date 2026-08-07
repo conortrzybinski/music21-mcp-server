@@ -190,3 +190,4 @@ benchmark-results.json
 
 # Claude specific
 claude_desktop_config.json
+handoff/*.md
